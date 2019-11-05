@@ -1,14 +1,17 @@
 class Block {
-    constructor(index, timestamp, transactions, proof, previousHash) {
+    constructor(index, transactions, difficulty, prevBlockHash, minedBy, blockDataHash, nonce, dateCreated, blockHash) {
         this.index = index;
-        this.timestamp = timestamp;
         this.transactions = transactions;
-        this.proof = proof;
-        this.previousHash = previousHash;
-        this.nodes = [];
+        this.difficulty = difficulty;
+        this.prevBlockHash = prevBlockHash;
+        this.minedBy = minedBy;
+        this.blockDataHash = blockDataHash;
+        this.nonce = nonce;
+        this.dateCreated = dateCreated;
+        this.blockHash = blockHash;
     }
 
-    index (req, response) {
+    index(req, response) {
         console.log('hello');
         return response.send({ message: 'hello world' });
     }
