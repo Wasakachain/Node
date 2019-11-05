@@ -5,8 +5,12 @@ class Block {
         this.transactions = transactions;
         this.proof = proof;
         this.previousHash = previousHash;
-
         this.nodes = [];
+    }
+
+    index (req, response) {
+        console.log('hello');
+        return response.send({ message: 'hello world' });
     }
 }
 
