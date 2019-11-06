@@ -1,12 +1,17 @@
 const Express = require('express');
-const app = Express();
-const blockRoutes = require('./Routes/BlockRoutes.js');
+const App = Express();
+// importing routes
+const BlocksRoutes = require('./Routes/BlocksRoutes.js');
+const TransactionsRoutes = require('./Routes/TransactionsRoutes.js');
+const NodeRoutes = require('./Routes/NodeRoutes.js');
 
-// app routes
-app.use('/block', blockRoutes);
+// App routes
+App.use('/', NodeRoutes);
+App.use('/blocks', BlocksRoutes);
+App.use('/transactions', TransactionsRoutes);
 
 
 // turn on the server
-const nodeServer = app.listen(5555, () => {
-    console.log('Node server is running! in port 5555');
+const nodeServer = App.listen(5555, () => {
+    console.log('\nNode server is running! in port 5555\n\n¡Enjoy WasakaChain!');
 });

@@ -1,4 +1,4 @@
-const Block = require('./block');
+const Block = require('./Block');
 const Transaction = require('./transaction');
 const { sha256 } = require('../utils');
 
@@ -24,6 +24,10 @@ class Blockchain {
         this.pendingTransaction.push(new Transaction(sender, recipient, amount));
 
         return this.lastBlock.index + 1;
+    }
+
+    __addBlock(req, response) {
+        return response.send({ message: `block added` });
     }
 
     validChain(chain) {
