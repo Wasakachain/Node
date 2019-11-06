@@ -1,42 +1,76 @@
+const { sha256 } = require('../utils');
+
 const TRANSACTION_STATUS = {
     'pending': 'pending',
     'confirmed': 'confirmed',
 };
 
-class Transaction {
-    constructor(sender, recipient, amount) {
-        this.sender = sender;
-        this.recipient = recipient;
-        this.amount = amount;
-    }
-    
-    __index(req, response) {
-        return response.send({ message: 'this are all the transactions' });
+function Transaction(_from, _to, _value, _fee, _senderPubKey, _data, _senderSignature) {
+    var from = _from;
+    var to = _to;
+    var value = _value;
+    var fee = _fee;
+    var dateCreated = new Date().toISOString();
+    var data = _data;
+    var senderPubKey = _senderPubKey;
+    var transationDataHash = null;
+    var senderSignature = _senderSignature;
+
+    class SingleTransaction {
+        constructor() {
+            transationDataHash = sha256(JSON.stringify({
+                from,
+                to,
+                value,
+                fee,
+                dateCreated,
+                data,
+                senderPubKey,
+            }));
+        }
+        index(_, response) {
+            return response.send({ message: 'this are all the transactions' });
+        }
+
+        show(req, response) {
+            return response.send({ message: `this is the transaction hash number: ${req.params.hash}` });
+        }
+
+        pendingTransactions(_, response) {
+            return response.send({ message: 'this are all the transactions in pending state' });
+        }
+
+        confirmedTransactions(_, response) {
+            return response.send({ message: 'this are all the transactions in confirmed state' });
+        }
+
+        send(_, response) {
+            return response.send({ message: 'transaction done!' });
+        }
+
+        addressBalance(req, response) {
+            return response.send({ message: `this is the address ${req.params.address} balance` });
+        }
+
+        addressTransactions(req, response) {
+            return response.send({ message: `this is the address ${req.params.address} transactions` });
+        }
+
+        get data() {
+            return {
+                from,
+                to,
+                value,
+                fee,
+                dateCreated,
+                data,
+                senderPubKey,
+                transationDataHash,
+                senderSignature,
+            }
+        }
     }
 
-    __show(req, response) {
-        return response.send({ message: `this is the transaction hash number: ${req.params.hash}` });
-    }
-
-    __pendingTransactions(req, response) {
-        return response.send({ message: 'this are all the transactions in pending state' });
-    }
-
-    __confirmedTransactions(req, response) {
-        return response.send({ message: 'this are all the transactions in confirmed state' });
-    }
-    
-    __send(req, response) {
-        return response.send({ message: 'transaction done!' });
-    }
-
-    __addressBalance(req, response) {
-        return response.send({ message: `this is the address ${req.params.address} balance` });
-    }
-
-    __addressTransactions(req, response) {
-        return response.send({ message: `this is the address ${req.params.address} transactions` });
-    }
+    return new SingleTransaction();
 }
-
 module.exports = Transaction;

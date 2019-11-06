@@ -1,8 +1,17 @@
 class Block {
-    constructor(index, timestamp, transactions, proof, previousHash) {
+    constructor(index, transactions, difficulty, prevBlockHash, minedBy, blockDataHash, nonce, dateCreated, blockHash) {
         this.index = index;
-        this.timestamp = timestamp;
         this.transactions = transactions;
+        this.difficulty = difficulty;
+        this.prevBlockHash = prevBlockHash;
+        this.minedBy = minedBy;
+        this.blockDataHash = blockDataHash;
+        this.nonce = nonce;
+        this.dateCreated = dateCreated;
+        this.blockHash = blockHash;
+    }
+
+    index(req, response) {
         this.proof = proof;
         this.previousHash = previousHash;
         this.nodes = [];
@@ -11,11 +20,11 @@ class Block {
         this.__show = this.__show.bind(this);
     }
 
-    __index(req, response) {
+    index(req, response) {
         return response.send({ message: 'hello world' });
     }
 
-    __show(req, response) {
+    show(req, response) {
         return response.send({ message: `this is the block number: ${req.params.index}` });
     }
 }
