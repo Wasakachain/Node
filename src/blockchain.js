@@ -1,3 +1,4 @@
+const Block = require('./Block');
 const Transaction = require('./transaction');
 const { sha256 } = require('../utils');
 const { request } = require('../utils');
@@ -22,10 +23,14 @@ class Blockchain {
         this.peers.push(url);
     }
 
-    validChain() {
-        let lastBlock = this.chain[0];
-        for (let currentIndex = 1; currentIndex < this.chain.length; currentIndex++) {
-            let block = this.chain[currentIndex];
+    __addBlock(req, response) {
+        return response.send({ message: `block added` });
+    }
+
+    validChain(chain) {
+        let lastBlock = this.blockchain[0];
+        for (let currentIndex = 1; currentIndex < this.blockchain.length; currentIndex++) {
+            let block = this.blockchain[currentIndex];
 
             if (block.previousHash !== sha256(JSON.stringify(lastBlock))) {
                 console.log(`Previous hash does not match on block ${currentIndex}`);
