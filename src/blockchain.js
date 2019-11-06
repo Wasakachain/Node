@@ -23,7 +23,7 @@ class Blockchain {
         this.peers.push(url);
     }
 
-    __addBlock(req, response) {
+    addBlock(req, response) {
         return response.send({ message: `block added` });
     }
 

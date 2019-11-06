@@ -12,12 +12,6 @@ App.use('/transactions', TransactionsRoutes);
 
 
 // turn on the server
-<<<<<<< HEAD
-const nodeServer = app.listen(5555, () => {
-    console.log('Node server is running! in port 5555');
-});
-=======
 const nodeServer = App.listen(5555, () => {
     console.log('\nNode server is running! in port 5555\n\n¡Enjoy WasakaChain!');
 });
->>>>>>> 55e17c2129ed88874cb1601ca51f2632d0233974

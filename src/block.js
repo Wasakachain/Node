@@ -12,7 +12,6 @@ class Block {
     }
 
     index(req, response) {
-        console.log('hello');
         this.proof = proof;
         this.previousHash = previousHash;
         this.nodes = [];
@@ -21,11 +20,11 @@ class Block {
         this.__show = this.__show.bind(this);
     }
 
-    __index(req, response) {
+    index(req, response) {
         return response.send({ message: 'hello world' });
     }
 
-    __show(req, response) {
+    show(req, response) {
         return response.send({ message: `this is the block number: ${req.params.index}` });
     }
 }
