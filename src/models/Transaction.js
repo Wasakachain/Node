@@ -1,4 +1,4 @@
-const { sha256 } = require('../utils');
+const { sha256 } = require('../utils/hash');
 
 function Transaction(from, to, value, fee, senderPubKey, data, senderSignature, minedInBlockIndex, transferSuccessful = false) {
     let dateCreated = null;

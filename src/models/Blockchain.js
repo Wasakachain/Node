@@ -1,6 +1,4 @@
-// const responseData = require('../utils/functions').responseData;
 const Block = require('./Block');
-// const initialDifficulty = require('../global').initialDifficulty;
 
 class Blockchain {
     constructor() {

@@ -1,4 +1,4 @@
-const Controller = require('../src/BlockchainController');
+const Controller = require('../BlockchainController');
 const Router = require('express').Router();
 
 // defining the routes for the block model

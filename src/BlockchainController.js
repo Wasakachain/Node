@@ -1,8 +1,8 @@
-const blockchain = new (require('./Blockchain'))();
-const Transaction = require('./Transaction');
+const node = new (require('./models/Node'))();
+const Transaction = require('./models/Transaction');
 
-blockchain.pendingTransactions.push(Transaction('0', '0', 0, 0, 0, 0, 0).getData());
-blockchain.confirmedTransactions.push(Transaction('0', '0', 0, 0, 0, 0, 0, 0, true).getData());
+node.blockchain.pendingTransactions.push(Transaction('0', '0', 0, 0, 0, 0, 0).getData());
+node.blockchain.confirmedTransactions.push(Transaction('0', '0', 0, 0, 0, 0, 0, 0, true).getData());
 
 class BlockchainController {
   // node index
