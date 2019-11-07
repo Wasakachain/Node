@@ -23,10 +23,6 @@ class Blockchain {
         this.peers.push(url);
     }
 
-    addBlock(req, response) {
-        return response.send({ message: `block added` });
-    }
-
     validChain(chain) {
         let lastBlock = this.blockchain[0];
         for (let currentIndex = 1; currentIndex < this.blockchain.length; currentIndex++) {
@@ -51,6 +47,10 @@ class Blockchain {
         this.peers.forEach((node) => {
             let res = request()
         });
+    }
+
+    testing(){
+        console.log('father class');
     }
 }
 

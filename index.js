@@ -1,15 +1,10 @@
 const Express = require('express');
 const App = Express();
 // importing routes
-const BlocksRoutes = require('./Routes/BlocksRoutes.js');
-const TransactionsRoutes = require('./Routes/TransactionsRoutes.js');
-const NodeRoutes = require('./Routes/NodeRoutes.js');
+const Routes = require('./Routes/NodeRoutes.js');
 
 // App routes
-App.use('/', NodeRoutes);
-App.use('/blocks', BlocksRoutes);
-App.use('/transactions', TransactionsRoutes);
-
+App.use('/', Routes);
 
 // turn on the server
 const nodeServer = App.listen(5555, () => {

@@ -27,34 +27,7 @@ function Transaction(_from, _to, _value, _fee, _senderPubKey, _data, _senderSign
                 senderPubKey,
             }));
         }
-        index(_, response) {
-            return response.send({ message: 'this are all the transactions' });
-        }
-
-        show(req, response) {
-            return response.send({ message: `this is the transaction hash number: ${req.params.hash}` });
-        }
-
-        pendingTransactions(_, response) {
-            return response.send({ message: 'this are all the transactions in pending state' });
-        }
-
-        confirmedTransactions(_, response) {
-            return response.send({ message: 'this are all the transactions in confirmed state' });
-        }
-
-        send(_, response) {
-            return response.send({ message: 'transaction done!' });
-        }
-
-        addressBalance(req, response) {
-            return response.send({ message: `this is the address ${req.params.address} balance` });
-        }
-
-        addressTransactions(req, response) {
-            return response.send({ message: `this is the address ${req.params.address} transactions` });
-        }
-
+        
         get data() {
             return {
                 from,
