@@ -1,9 +1,12 @@
-const Blockchain = require('./Blockchain');
+const node = new (require('./models/Node'))();
+const Transaction = require('./models/Transaction');
 
-class BlockchainController extends Blockchain {
+node.blockchain.pendingTransactions.push(Transaction('0', '0', 0, 0, 0, 0, 0).getData());
+node.blockchain.confirmedTransactions.push(Transaction('0', '0', 0, 0, 0, 0, 0, 0, true).getData());
+
+class BlockchainController {
   // node index
   static nodeIndex(req, response) {
-    console.log(DOGOR)
     return response.send({
       about: 'foo',
       'nodeId': 'foo',
@@ -75,11 +78,11 @@ class BlockchainController extends Blockchain {
   }
 
   static pendingTransactions(_, response) {
-    return response.send({ message: 'this are all the transactions in pending state' });
+    return response.send({ transactions: blockchain.pendingTransactions });
   }
 
   static confirmedTransactions(_, response) {
-    return response.send({ message: 'this are all the transactions in confirmed state' });
+    return response.send({ transactions: blockchain.confirmedTransactions });
   }
 
   static send(_, response) {

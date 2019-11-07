@@ -2,7 +2,6 @@ const Express = require('express');
 const App = Express();
 // importing routes
 const Routes = require('./Routes/NodeRoutes.js');
-
 // App routes
 App.use('/', Routes);
 
