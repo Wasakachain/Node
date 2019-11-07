@@ -1,16 +1,18 @@
 const { sha256 } = require('../utils');
 
-function Transaction(from, to, value, fee, senderPubKey, data, senderSignature) {
+function Transaction(from, to, value, fee, senderPubKey, data, senderSignature, minedInBlockIndex, transferSuccessful = false) {
+    let dateCreated = null;
+    let transactionDataHash = null;
     class SingleTransaction {
         constructor() {
-            this.dateCreated = new Date().toISOString();
+            dateCreated = new Date().toISOString();
 
-            this.transationDataHash = sha256(JSON.stringify({
+            transactionDataHash = sha256(JSON.stringify({
                 from,
                 to,
                 value,
                 fee,
-                dateCreated: this.dateCreated,
+                dateCreated,
                 data,
                 senderPubKey,
             }));
@@ -22,9 +24,13 @@ function Transaction(from, to, value, fee, senderPubKey, data, senderSignature) 
                 to,
                 value,
                 fee,
+                dateCreated,
                 data,
                 senderPubKey,
+                transactionDataHash,
                 senderSignature,
+                minedInBlockIndex,
+                transferSuccessful
             }
         }
     }

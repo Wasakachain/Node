@@ -24,8 +24,8 @@ Router.get('/blocks/:index', Controller.blockByIndex);
 // defining the routes for the Transaction model
 Router.get('transactions/', Controller.transactionIndex);
 Router.get('transactions/:hash', Controller.show);
-Router.get('transactions/pending', Controller.pendingTransactions);
-Router.get('transactions/confirmed', Controller.confirmedTransactions);
+Router.get('/transactions/pending', Controller.pendingTransactions);
+Router.get('/transactions/confirmed', Controller.confirmedTransactions);
 Router.post('transactions/send', Controller.send);
 
 module.exports = Router;

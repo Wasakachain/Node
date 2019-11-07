@@ -1,6 +1,6 @@
-const responseData = require('../utils/functions').responseData;
+// const responseData = require('../utils/functions').responseData;
 const Block = require('./Block');
-const initialDifficulty = require('../global').initialDifficulty;
+// const initialDifficulty = require('../global').initialDifficulty;
 
 class Blockchain {
     constructor() {
@@ -26,9 +26,9 @@ class Blockchain {
         if (!req.params.index || !this.chain[req.params.index]) {
             return response
                 .status(404)
-                .json(responseData({ message: 'Block not found' }));
+                .json({ message: 'Block not found' });
         }
-        return response.json(responseData(this.chain[req.params.index]));
+        return response.json(this.chain[req.params.index]);
     }
 
 }
