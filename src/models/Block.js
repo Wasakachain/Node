@@ -1,4 +1,4 @@
-const { sha256 } = require('../utils')
+const { sha256 } = require('../utils/hash')
 
 function Block({ index, difficulty, prevBlockHash, transactions, nonce, minedBy }) {
     let blockDataHash = null;

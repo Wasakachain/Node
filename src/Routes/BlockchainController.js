@@ -1,8 +1,5 @@
 const node = new (require('../models/Node'))();
-const Transaction = require('../models/Transaction');
-
-node.blockchain.pendingTransactions.push(Transaction('0', '0', 0, 0, 0, 0, 0).getData());
-node.blockchain.confirmedTransactions.push(Transaction('0', '0', 0, 0, 0, 0, 0, 0, true).getData());
+// const Transaction = require('../models/Transaction');
 
 class BlockchainController {
   // node index
@@ -26,8 +23,12 @@ class BlockchainController {
     return response.send({ message: 'the chain was reset to its genesis block' });
   }
 
-  static balances(req, response) {
-    return response.send({ message: 'this are all the address balances' });
+  static balances(_, response) {
+    let addressesInfo = node.getAddressesBalances();
+    if (addressesInfo) {
+      return response.send({ addressesBalances: addressesInfo });
+    }
+    return response.status(400).send({ message: 'No Addresses Found' })
   }
 
   static startMiner(req, response) {

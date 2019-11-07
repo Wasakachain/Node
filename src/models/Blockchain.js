@@ -2,12 +2,13 @@ const Block = require('./Block');
 
 class Blockchain {
     constructor() {
+        // Blockchain attributes
         this.chain = [];
         this.pendingTransactions = [];
         this.confirmedTransactions = [];
         this.blocksCount = 0;
         this.nodes = [];
-
+        this.addresses = [];
         //Create genesis block
         this.chain.push(new Block({
             index: 0,
@@ -18,6 +19,7 @@ class Blockchain {
             minedBy: '00000000000000000000000000000000'
         }));
         this.getBlock = this.getBlock.bind(this);
+        this.getAddresses = this.getAddresses.bind(this);
     }
 
     getBlock(req, response) {
@@ -27,6 +29,24 @@ class Blockchain {
                 .json({ message: 'Block not found' });
         }
         return response.json(this.chain[req.params.index]);
+    }
+
+    getAddresses() {
+        if (this.addresses.length > 0) {
+            return this.addresses;
+        }
+        else {
+            return false;
+        }
+    }
+
+    addAddress(addressData) {
+        this.addresses.push({
+            address: addressData.address,
+            safeBalance: 0,
+            confirmedBalance: 0,
+            pendingBalance: 0
+        });
     }
 
 }
