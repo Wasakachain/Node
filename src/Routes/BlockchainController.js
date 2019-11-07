@@ -1,5 +1,5 @@
-const node = new (require('./models/Node'))();
-const Transaction = require('./models/Transaction');
+const node = new (require('../models/Node'))();
+const Transaction = require('../models/Transaction');
 
 node.blockchain.pendingTransactions.push(Transaction('0', '0', 0, 0, 0, 0, 0).getData());
 node.blockchain.confirmedTransactions.push(Transaction('0', '0', 0, 0, 0, 0, 0, 0, true).getData());
