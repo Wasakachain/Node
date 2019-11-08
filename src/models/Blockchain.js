@@ -37,6 +37,15 @@ class Blockchain {
         this.cumulativeDifficulty += Math.pow(16, blockDifficulty)
     }
 
+    async registerNode(address) {
+        try {
+            const res = await request(`${address}/info`);
+            if (res) {
+                this.peers.push(address);
+            }
+        } catch (error) { }
+    }
+
     async synchronizeChain() {
         // TO DO
         let newChain = null;
