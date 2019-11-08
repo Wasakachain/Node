@@ -82,8 +82,24 @@ class BlockchainController {
     return response.send({ message: 'this are all the transactions' });
   }
 
-  static show(req, response) {
-    return response.send({ message: `this is the transaction hash number: ${req.params.hash}` });
+  static show(_, response) {
+    const { hash } = request.params;
+
+    if (!/^0x([A-Fa-f0-9]{64})$/.test(hash)) {
+      return response
+        .status(400)
+        .json({ message: 'Invalid transaction hash' })
+    }
+
+    let transaction = [...node.blockchain.confirmedTransactions
+      , ...node.blockchain.pendingTransactions]
+      .find(txn => txn.transactionDataHash === hash)
+
+    if (transaction) return response.status(200).json(transaction)
+
+    return response
+      .status(404)
+      .json({ message: 'Transaction not found' })
   }
 
   static pendingTransactions(_, response) {

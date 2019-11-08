@@ -1,18 +1,22 @@
 const http = require('http');
 
-exports.request = function (options) {
-    callback = function (response) {
-        var str = ''
-        response.on('data', function (chunk) {
-            str += chunk;
+exports.request = function ({ host, path }) {
+    return new Promise((resolve, reject) => {
+        let req = http.get({ host, path }, function (res) {
+            if (res.statusCode >= 300) reject();
+            let bodyChunks = [];
+            res.on('data', function (chunk) {
+                bodyChunks.push(chunk);
+            }).on('end', function () {
+                let body = Buffer.concat(bodyChunks);
+                resolve(body)
+            })
         });
 
-        response.on('end', function () {
-            console.log(str);
+        req.on('error', function (e) {
+            reject(e)
         });
-    }
-
-    let req = http.request(options, callback);
-    req.write("data");
-    req.end();
+    });
 }
+
+
