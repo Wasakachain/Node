@@ -1,5 +1,5 @@
 const Block = require('./Block');
-
+const { request } = require('../utils/functions');
 class Blockchain {
     constructor() {
         // Blockchain attributes
@@ -7,8 +7,10 @@ class Blockchain {
         this.pendingTransactions = [];
         this.confirmedTransactions = [];
         this.blocksCount = 0;
-        this.nodes = [];
+        this.peers = [];
         this.addresses = [];
+        this.cumulativeDifficulty = 0;
+        this.miningJobs = [];
         //Create genesis block
         this.chain.push(new Block({
             index: 0,
@@ -28,6 +30,28 @@ class Blockchain {
         }
         else {
             return false;
+        }
+    }
+
+    addCumulativeDifficulty(blockDifficulty) {
+        this.cumulativeDifficulty += Math.pow(16, blockDifficulty)
+    }
+
+    async synchronizeChain() {
+        // TO DO
+        let newChain = null;
+        this.peers.forEach((peer) => {
+            try {
+                let res = await request(`${node}/info`)
+                if (res.cumulativeDifficulty > this.cumulativeDifficulty) {
+                    res = await request(`${node}/blocks`);
+                    newChain = res.chain;
+                }
+            } catch (error) { }
+        });
+
+        if (newChain) {
+            this.chain = newChain;
         }
     }
 
