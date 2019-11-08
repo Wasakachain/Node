@@ -43,9 +43,7 @@ class Blockchain {
             if (res) {
                 this.peers.push(address);
             }
-        } catch (error) {
-            console.log('Node registering failed.');
-        }
+        } catch (error) { }
     }
 
     async synchronizeChain() {
