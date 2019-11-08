@@ -1,5 +1,4 @@
 const node = new (require('../models/Node'))();
-// const Transaction = require('../models/Transaction');
 
 class BlockchainController {
   // node index
@@ -56,7 +55,16 @@ class BlockchainController {
   }
 
   static addressTransactions(req, response) {
-    return response.send({ message: `this is the address ${req.params.address} transactions` });
+    const { address } = req.params;
+
+    let transactions = [...node.blockchain.confirmedTransactions, ...node.blockchain.pendingTransactions]
+      .filter((transaction) => transaction.from === address || transaction.to === address);
+
+    if (!transactions) {
+      return response.status(404).send({ message: 'No transactions found' });
+    }
+
+    return response.send({ transactions });
   }
   // blockchain methods
   static addBlock(req, response) {

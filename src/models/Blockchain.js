@@ -22,15 +22,6 @@ class Blockchain {
         this.getAddresses = this.getAddresses.bind(this);
     }
 
-    getBlock(req, response) {
-        if (!req.params.index || !this.chain[req.params.index]) {
-            return response
-                .status(404)
-                .json({ message: 'Block not found' });
-        }
-        return response.json(this.chain[req.params.index]);
-    }
-
     getAddresses() {
         if (this.addresses.length > 0) {
             return this.addresses;
