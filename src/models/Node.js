@@ -9,7 +9,8 @@ class Node {
     getAddressesBalances() {
         let addresses = this.blockchain.getAddresses();
         if (addresses) {
-            return addresses.map(({ address, safeBalance }) => {
+            return addresses.filter(({confirmedBalance}) => confirmedBalance !== 0 )
+            .map(({ address, safeBalance }) => {
                 return {
                     [address]: safeBalance
                 };
