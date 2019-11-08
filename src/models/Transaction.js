@@ -1,40 +1,45 @@
 const { sha256 } = require('../utils/hash');
 
-function Transaction(from, to, value, fee, senderPubKey, data, senderSignature, minedInBlockIndex, transferSuccessful = false) {
-    let dateCreated = null;
-    let transactionDataHash = null;
-    class SingleTransaction {
-        constructor() {
-            dateCreated = new Date().toISOString();
+class Transaction {
+    constructor(from, to, value, fee, senderPubKey, data, senderSignature, minedInBlockIndex, transferSuccessful = false) {
+        this.from = from;
+        this.to = to;
+        this.value = value;
+        this.fee = fee;
+        this.dateCreated = new Date().toISOString();
+        this.data = data;
+        this.senderPubKey = senderPubKey;
+        this.transactionDataHash = sha256(JSON.stringify({
+            from,
+            to,
+            value,
+            fee,
+            dateCreated: this.dateCreated,
+            data,
+            senderPubKey,
+        }));
 
-            transactionDataHash = sha256(JSON.stringify({
-                from,
-                to,
-                value,
-                fee,
-                dateCreated,
-                data,
-                senderPubKey,
-            }));
-        }
+        this.senderSignature = senderSignature;
+        this.minedInBlockIndex = minedInBlockIndex;
+        this.transferSuccessful = transferSuccessful;
 
-        getData() {
-            return {
-                from,
-                to,
-                value,
-                fee,
-                dateCreated,
-                data,
-                senderPubKey,
-                transactionDataHash,
-                senderSignature,
-                minedInBlockIndex,
-                transferSuccessful
-            }
-        }
     }
 
-    return new SingleTransaction();
+    getData() {
+        return {
+            from,
+            to,
+            value,
+            fee,
+            dateCreated,
+            data,
+            senderPubKey,
+            transactionDataHash,
+            senderSignature,
+            minedInBlockIndex,
+            transferSuccessful
+        }
+    }
 }
+
 module.exports = Transaction;
