@@ -1,4 +1,6 @@
 const http = require('http');
+const elliptic = require('elliptic');
+const ec = new elliptic.ec('secp256k1');
 
 exports.request = function ({ host, path }) {
     return new Promise((resolve, reject) => {
@@ -17,6 +19,18 @@ exports.request = function ({ host, path }) {
             reject(e)
         });
     });
+}
+
+function descompressPublicKey(pubKeyCompressed){
+    const pubKeyX = pubKeyCompressed.substring(0, 64);
+    const pubKeyYOdd = parseInt(pubKeyCompressed.substring(64));
+    return ec.curve.pointFromX(pubKeyX, pubKeyYOdd);
+}
+
+exports.verifySignature = function(data, publicKey, signature) {
+    const publicKeyPoint = descompressPublicKey(publicKey);
+    const keyPair = ec.keyPair({pub: publicKeyPoint});
+    return keyPair.verify(data, {r: signature[0], s: signature[1]})
 }
 
 
