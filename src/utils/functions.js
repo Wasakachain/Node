@@ -9,13 +9,11 @@ exports.request = function ({ host, path }) {
                 bodyChunks.push(chunk);
             }).on('end', function () {
                 let body = Buffer.concat(bodyChunks);
-                console.log('BODY: ' + body);
                 resolve(body)
             })
         });
 
         req.on('error', function (e) {
-            console.log('ERROR: ' + e.message);
             reject(e)
         });
     });
