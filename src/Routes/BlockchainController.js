@@ -36,17 +36,17 @@ class BlockchainController {
   }
 
   static showPeers(req, response) {
-    return response.send(node.blockchain.peers);
+    return response.send(node.peers);
   }
 
   static async connectPeer(req, response) {
     const { peerUrl } = req.body;
     try {
       let res = await request(`${peerUrl}/info`, 'GET');
-      if (node.blockchain.peers[res.data.nodeID]) {
+      if (node.peers[res.data.nodeID]) {
         return response.status(409).send({ errorMsg: `Already connected to peer: ${peerUrl}` });
       }
-      node.blockchain.peers[res.data.nodeID] = peerUrl;
+      node.peers[res.data.nodeID] = peerUrl;
       await request(`${peerUrl}/peers/connect`, 'POST', { peerUrl: address() })
 
       console.log('\x1b[46m%s\x1b[0m', `Connected to peer ${peerUrl}`);
@@ -75,7 +75,7 @@ class BlockchainController {
   static addressTransactions(req, response) {
     const { address } = req.params;
 
-    let transactions = [...node.blockchain.confirmedTransactions, ...node.blockchain.pendingTransactions]
+    let transactions = [...node.confirmedTransactions, ...node.pendingTransactions]
       .filter((transaction) => transaction.from === address || transaction.to === address);
 
     if (!transactions.length > 0) {
@@ -92,12 +92,12 @@ class BlockchainController {
 
   // block methods
   static blockIndex(req, response) {
-    return response.send(node.blockchain.chain);
+    return response.send(node.blockchain);
   }
 
   static blockByIndex(request, response) {
     const { index: requestedIndex } = request.params;
-    const block = node.blockchain.chain.find( ({ index: { index } }) => index == requestedIndex);
+    const block = node.find( ({ index: { index } }) => index == requestedIndex);
     if (block) {
       return response.json(block);
     }
@@ -121,8 +121,8 @@ class BlockchainController {
         .json({ message: 'Invalid transaction hash' })
     }
 
-    let transaction = [...node.blockchain.confirmedTransactions
-      , ...node.blockchain.pendingTransactions]
+    let transaction = [...node.confirmedTransactions
+      , ...node.pendingTransactions]
       .find(txn => txn.transactionDataHash === hash)
 
     if (transaction) return response.status(200).json(transaction)
@@ -133,11 +133,11 @@ class BlockchainController {
   }
 
   static pendingTransactions(_, response) {
-    return response.send({ transactions: node.blockchain.pendingTransactions });
+    return response.send({ transactions: node.pendingTransactions });
   }
 
   static confirmedTransactions(_, response) {
-    return response.send({ transactions: node.blockchain.confirmedTransactions });
+    return response.send({ transactions: node.confirmedTransactions });
   }
 
   static send(_, response) {
