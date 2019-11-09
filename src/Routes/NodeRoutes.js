@@ -1,6 +1,8 @@
 const Controller = require('./BlockchainController');
 const Router = require('express').Router();
 
+Router.use('/peers/connect', Controller.connectPeerMiddleware);
+
 // defining the routes for the block model
 Router.get('/info', Controller.nodeIndex); //done
 // debugging routes

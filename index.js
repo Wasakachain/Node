@@ -2,8 +2,7 @@ const Express = require('express');
 const App = Express();
 // importing routes
 const Routes = require('./src/Routes/NodeRoutes');
-const {handleNotFound} = require('./src/utils/functions');
-
+const { handleNotFound } = require('./src/utils/functions');
 const PORT = process.env.port || 5555;
 
 App.use(Express.json());

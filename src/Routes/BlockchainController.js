@@ -1,4 +1,4 @@
-const node = new (require('../models/Node'))();
+const node = new (require('../models/Blockchain'))();
 const { request, address } = require('../utils/functions');
 
 class BlockchainController {
@@ -97,7 +97,7 @@ class BlockchainController {
 
   static blockByIndex(request, response) {
     const { index: requestedIndex } = request.params;
-    const block = node.find( ({ index: { index } }) => index == requestedIndex);
+    const block = node.find(({ index: { index } }) => index == requestedIndex);
     if (block) {
       return response.json(block);
     }
