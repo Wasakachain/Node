@@ -5,9 +5,9 @@ class Node {
     constructor() {
         this.createGenesis = this.createGenesis.bind(this);
         this.generateNodeId = this.generateNodeId.bind(this);
+        this.generateNodeId();
 
         // create genesis block
-        this.generateNodeId();
         this.createGenesis();
 
         // this.getBlock = this.getBlock.bind(this);
@@ -27,22 +27,20 @@ class Node {
         // Implement chain verification
         try {
             let res = await request(`${node}/info`)
-
-            if (res.cumulativeDifficulty > this.cumulativeDifficulty) {
+            if (res.data.cumulativeDifficulty > this.cumulativeDifficulty) {
                 res = await request(`${node}/blocks`);
-                if (!Blockchain.verifyChain(res.blockchain)) return;
-
-                let newChain = res.blockchain;
-
+                if (!Node.verifyChain(res.blockchain)) return;
+                let newChain = res.data;
                 let resTxs = await request(`${node}/transactions/pending`);
-                let newTransactions = this.synchronizeTransactions(resTxs.transactions);
-
-                if (newChain && newTransactions) {
+                let newTransactions = this.synchronizeTransactions(resTxs.data.transactions);
+                if (newChain) {
                     this.blockchain = newChain;
                     this.pendingTransactions = newTransactions;
                 }
             }
-        } catch (error) { }
+        } catch (error) {
+            console.log(error)
+        }
         console.log(`syncronized with ${node}`)
     }
 
@@ -69,24 +67,29 @@ class Node {
         this.cumulativeDifficulty = 0;
         this.miningJobs = [];
         //Create genesis block
-        this.blockchain.push(new Block({
-            index: 0,
-            prevBlockHash: '0',
-            previousDifficulty: 0,
-            pendingTransactions: this.pendingTransactions,
-            nonce: 0,
-            minedBy: '00000000000000000000000000000000',
-        }));
+        this.blockchain.push(new Block(0, 1, 0, this.pendingTransactions, 0, '00000000000000000000000000000000'));
+
+        if (!process.env.port) {
+            this.blockchain.push(new Block(0, 1, 0, this.pendingTransactions, 0, '00000000000000000000000000000000'));
+            this.blockchain.push(new Block(0, 1, 0, this.pendingTransactions, 0, '00000000000000000000000000000000'));
+            this.blockchain.push(new Block(0, 1, 0, this.pendingTransactions, 0, '00000000000000000000000000000000'));
+            this.blockchain.push(new Block(0, 1, 0, this.pendingTransactions, 0, '00000000000000000000000000000000'));
+            this.blockchain.push(new Block(0, 1, 0, this.pendingTransactions, 0, '00000000000000000000000000000000'));
+
+            this.blockchain.forEach((block) => {
+                this.addCumulativeDifficulty(block.difficulty)
+            });
+        }
+
         this.id = `${new Date().toISOString()}${this.blockchain[0].blockHash}`;
     }
 
     index() {
-        let blockchainData = this.getGeneralInfo();
         return {
             about: 'WasakaChain Blockchain Node',
             nodeID: this.nodeID,
             nodeUrl: address(),
-            ...blockchainData
+            ...this.getGeneralInfo()
         }
     }
 
