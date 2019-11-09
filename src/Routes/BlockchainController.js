@@ -5,12 +5,12 @@ class BlockchainController {
   static nodeIndex(req, response) {
     return response.send({
       about: 'foo',
-      'nodeId': 'foo',
-      'chainId': 'foo',
-      'nodeUrl': 'foo',
-      'peers': 'foo',
-      'blocksCount': 'foo',
-      'confirmedTransactions': 'foo',
+      nodeID: 'foo',
+      chainID: 'foo',
+      nodeUrl: 'foo',
+      peers: 'foo',
+      blocksCount: 'foo',
+      confirmedTransactions: 'foo',
     });
   }
 
@@ -45,19 +45,19 @@ class BlockchainController {
   static async connectPeer(req, response) {
     const { peerUrl } = req.body;
     try {
-      let res = await request(`${peerUrl}/info`);
-      if (node.blockchain.peers[res.nodeID]) {
+      let res = await request(`${peerUrl}/info`, 'GET');
+      if (node.blockchain.peers[res.data.nodeID]) {
         return response.status(409).send({ errorMsg: `Already connected to peer: ${peerUrl}` });
       }
-      node.blockchain.peers[res.nodeID] = peerUrl;
+      node.blockchain.peers[res.data.nodeID] = peerUrl;
       await request(`${peerUrl}/peers/connect`, 'POST', { peerUrl: address() })
 
-      console.log('\x1b[31m%s\x1b[0m', `Connected to peer ${peerUrl}`);
+      console.log('\x1b[46m%s\x1b[0m', `Connected to peer ${peerUrl}`);
       return response.send({ message: `Connected to peer: ${peerUrl}` });
 
     } catch (error) {
       if (error.status === 409) {
-        console.log('\x1b[31m%s\x1b[0m', `Connected to peer ${peerUrl}`);
+        console.log('\x1b[46m%s\x1b[0m', `Connected to peer ${peerUrl}`);
         return response.send({ message: `Connected to peer: ${peerUrl}` })
       }
 

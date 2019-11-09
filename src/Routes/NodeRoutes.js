@@ -15,7 +15,7 @@ Router.get('/address/:address/transactions', Controller.addressTransactions);
 Router.get('/mining/get-mining-job/:miner-address', Controller.startMiner);
 Router.post('/mining/submit-mined-block', Controller.addBlock);
 // peers routes
-Router.post('/peers', Controller.showPeers);
+Router.get('/peers', Controller.showPeers);
 Router.post('/peers/connect', Controller.connectPeer);
 Router.post('/peers/notify-new-block', Controller.broadcastBlocks);
 // defining the routes for the block model
