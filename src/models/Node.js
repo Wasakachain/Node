@@ -1,18 +1,49 @@
 const Block = require('./Block');
-const { request, generateNodeId, address } = require('../utils/functions');
+const { request, generateNodeId, address, newPeerConnected } = require('../utils/functions');
 
 class Node {
     constructor() {
         this.createGenesis = this.createGenesis.bind(this);
         this.generateNodeId = this.generateNodeId.bind(this);
+
         // create genesis block
         this.generateNodeId();
         this.createGenesis();
+
         // this.getBlock = this.getBlock.bind(this);
         this.getAddresses = this.getAddresses.bind(this);
         this.getFullInfo = this.getFullInfo.bind(this);
         this.getGeneralInfo = this.getGeneralInfo.bind(this);
         this.getConfirmedBalances = this.getConfirmedBalances.bind(this);
+        this.onPeeerConnected = this.onPeeerConnected.bind(this);
+        newPeerConnected.addListener('connection', this.onPeeerConnected)
+    }
+
+    async onPeeerConnected(peer) {
+        await this.synchronizeChain(peer);
+    }
+
+    async synchronizeChain(node) {
+        // Implement chain verification
+        try {
+            let res = await request(`${node}/info`)
+
+            if (res.cumulativeDifficulty > this.cumulativeDifficulty) {
+                res = await request(`${node}/blocks`);
+                if (!Blockchain.verifyChain(res.blockchain)) return;
+
+                let newChain = res.blockchain;
+
+                let resTxs = await request(`${node}/transactions/pending`);
+                let newTransactions = this.synchronizeTransactions(resTxs.transactions);
+
+                if (newChain && newTransactions) {
+                    this.blockchain = newChain;
+                    this.pendingTransactions = newTransactions;
+                }
+            }
+        } catch (error) { }
+        console.log(`syncronized with ${node}`)
     }
 
     checkPeers() {
@@ -29,7 +60,7 @@ class Node {
 
     createGenesis() {
         // Blockchain attributes
-        this.chain = [];
+        this.blockchain = [];
         this.pendingTransactions = [];
         this.confirmedTransactions = [];
         this.blocksCount = 0;
@@ -38,7 +69,7 @@ class Node {
         this.cumulativeDifficulty = 0;
         this.miningJobs = [];
         //Create genesis block
-        this.chain.push(new Block({
+        this.blockchain.push(new Block({
             index: 0,
             prevBlockHash: '0',
             previousDifficulty: 0,
@@ -46,7 +77,7 @@ class Node {
             nonce: 0,
             minedBy: '00000000000000000000000000000000',
         }));
-        this.id = `${new Date().toISOString()}${this.chain[0].blockHash}`;
+        this.id = `${new Date().toISOString()}${this.blockchain[0].blockHash}`;
     }
 
     index() {
@@ -92,7 +123,7 @@ class Node {
             peers: this.peers,
             chain: {
                 chainID: this.id,
-                blocks: this.chain,
+                blocks: this.blockchain,
                 cumulativeDifficulty: this.cumulativeDifficulty,
             },
             pendingTransactions: this.pendingTransactions,
@@ -142,33 +173,6 @@ class Node {
             }
         }
         return true;
-    }
-
-    async synchronizeChain() {
-        // Implement chain verification
-        let newChain = null;
-        let newTransactions = null;
-        for (const node in this.peers) {
-            try {
-                let res = await request(`${node}/info`)
-
-                if (res.cumulativeDifficulty > this.cumulativeDifficulty) {
-                    res = await request(`${node}/blocks`);
-                    if (!Blockchain.verifyChain(res.chain)) return;
-
-                    newChain = res.chain;
-
-                    let resTxs = await request(`${node}/transactions/pending`);
-                    newTransactions = this.synchronizeTransactions(resTxs.transactions);
-                }
-
-            } catch (error) { }
-        }
-
-        if (newChain && newTransactions) {
-            this.chain = newChain;
-            this.pendingTransactions = newTransactions;
-        }
     }
 
     addAddress(addressData) {
