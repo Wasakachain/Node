@@ -1,6 +1,5 @@
-const { sha256 } = require('../utils/hash');
-const { verifySignature } = require('../utils/hash');
-
+const { sha256, verifySignature } = require('../utils/hash');
+const { isValidAddress } = require('../utils/functions');
 class Transaction {
     constructor(from, to, value, fee, senderPubKey, data, senderSignature, minedInBlockIndex, transferSuccessful = false) {
         this.from = from;
@@ -26,6 +25,20 @@ class Transaction {
 
     }
 
+    static isValid(transaction) {
+        //TO DO: COMPLETE THIS METHOD
+        if (!isValidAddress(transaction.from) && !isValidAddress(transaction.to)) {
+            return false;
+        }
+
+        if (Transaction.isValid(transaction) !== transaction.transactionDataHash) {
+            return false;
+        }
+
+        return true;
+
+    }
+
     getData() {
         return {
             from,
@@ -40,6 +53,18 @@ class Transaction {
             minedInBlockIndex,
             transferSuccessful
         }
+    }
+
+    static dataHash({ from, to, value, fee, dateCreated, data, senderPubKey }) {
+        return sha256(JSON.stringify({
+            from,
+            to,
+            value,
+            fee,
+            dateCreated,
+            data,
+            senderPubKey,
+        }))
     }
 
     verify() {

@@ -11,6 +11,18 @@ class Blockchain {
         this.getAddresses = this.getAddresses.bind(this);
     }
 
+    checkPeers() {
+        if (Object.keys(this.peers).length === 0) return;
+
+        Object.keys(this.peers).forEach(async (key) => {
+            try {
+                await request(`${this.peers[key]}/info`, 'GET')
+            } catch (error) {
+                delete this.peers[key];
+            }
+        });
+    }
+
     createGenesis() {
         // Blockchain attributes
         this.chain = [];
@@ -45,14 +57,16 @@ class Blockchain {
         this.cumulativeDifficulty += Math.pow(16, blockDifficulty)
     }
 
-    isValidChain() {
-
-    }
-
     synchronizeTransactions(nodeTransactions) {
         return [...this.pendingTransactions, ...nodeTransactions.filter((transaction) => {
             return this.pendingTransactions.find((tx) => tx.transactionDataHash === transaction.transactionDataHash) ? false : true;
         })];
+    }
+
+    notifyNewBlock() {
+        Object.values(this.peers).forEach((peer) => {
+
+        });
     }
 
     async registerNode(address) {
@@ -64,6 +78,16 @@ class Blockchain {
         } catch (error) { }
     }
 
+    static verifyChain(chain) {
+        // TO DO: complete method
+        for (const block in chain) {
+            if (!Block.isValid(block)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     async synchronizeChain() {
         // Implement chain verification
         let newChain = null;
@@ -71,12 +95,17 @@ class Blockchain {
         for (const node in this.peers) {
             try {
                 let res = await request(`${node}/info`)
+
                 if (res.cumulativeDifficulty > this.cumulativeDifficulty) {
                     res = await request(`${node}/blocks`);
+                    if (!Blockchain.verifyChain(res.chain)) return;
+
                     newChain = res.chain;
+
                     let resTxs = await request(`${node}/transactions/pending`);
                     newTransactions = this.synchronizeTransactions(resTxs.transactions);
                 }
+
             } catch (error) { }
         }
 

@@ -56,6 +56,14 @@ exports.request = (url, method, data) => {
     })
 };
 
+exports.isValidAddress = function (address) {
+    const unprefixedAddress = address.replace(/^0x/, '');
+    if (/^([A-Fa-f0-9]{40})$/.test(unprefixedAddress))
+        return unprefixedAddress;
+    else
+        return false;
+}
+
 function generateNodeId() {
     return crypto
         .createHash('sha256')
@@ -65,10 +73,10 @@ function generateNodeId() {
 
 exports.handleNotFound = (_, res) => {
     return res
-    .status(404)
-    .json({
-        error: {
-            message: 'WasakaChain API Endpoint not found'
-        },
-    });
+        .status(404)
+        .json({
+            error: {
+                message: 'WasakaChain API Endpoint not found'
+            },
+        });
 }
