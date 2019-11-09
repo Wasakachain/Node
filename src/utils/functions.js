@@ -1,22 +1,50 @@
 const http = require('http');
+const https = require('https');
+const Url = require('url');
 
-exports.request = function ({ host, path }) {
-    return new Promise((resolve, reject) => {
-        let req = http.get({ host, path }, function (res) {
-            if (res.statusCode >= 300) reject();
-            let bodyChunks = [];
-            res.on('data', function (chunk) {
-                bodyChunks.push(chunk);
-            }).on('end', function () {
-                let body = Buffer.concat(bodyChunks);
-                resolve(body)
-            })
-        });
-
-        req.on('error', function (e) {
-            reject(e)
-        });
-    });
+function setHeaders(data) {
+    let header = {
+        'Content-Type': 'application/x-www-form-urlencoded'
+    }
+    if (data) {
+        header['Content-Length'] = Buffer.byteLength(JSON.stringify(data));
+    }
+    return header;
 }
 
+exports.request = (url, method, data) => {
+    return new Promise((resolve, reject) => {
+        let parsedUrl = Url.parse(url);
+        const handler = parsedUrl.port == 443 ? https : http;
 
+        let output = '';
+        const req = handler.request({
+            host: `${parsedUrl.hostname}`, port: parsedUrl.port, path: parsedUrl.path, method, headers: setHeaders(data)
+        }, (res) => {
+            res.setEncoding('utf8');
+            res.on('data', (chunk) => {
+                output += chunk;
+            });
+
+            res.on('end', () => {
+                let response = JSON.parse(output);
+                if (res.statusCode >= 300) {
+                    reject({ status: res.statusCode, data: response });
+                    return;
+                }
+                resolve({ status: res.statusCode, data: response });
+            });
+        });
+
+        req.on('error', (err) => {
+            reject({ error: err });
+        });
+
+        if (data) {
+            req.write(JSON.stringify(data));
+        }
+
+        req.end();
+
+    })
+};
