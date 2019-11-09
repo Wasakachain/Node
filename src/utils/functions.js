@@ -3,6 +3,8 @@ const https = require('https');
 const Url = require('url');
 const querystring = require('querystring');
 const ip = require('ip');
+const crypto = require('crypto');
+const uuidv4 = require('uuid/v4');
 
 function setHeaders(data) {
     let header = {
@@ -53,3 +55,20 @@ exports.request = (url, method, data) => {
         req.end();
     })
 };
+
+function generateNodeId() {
+    return crypto
+        .createHash('sha256')
+        .update((new Date()).toISOString() + uuidv4())
+        .digest('hex');
+}
+
+exports.handleNotFound = (_, res) => {
+    return res
+    .status(404)
+    .json({
+        error: {
+            message: 'WasakaChain API Endpoint not found'
+        },
+    });
+}

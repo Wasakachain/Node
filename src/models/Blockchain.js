@@ -1,7 +1,17 @@
 const Block = require('./Block');
 const { request } = require('../utils/functions');
+
 class Blockchain {
     constructor() {
+        this.createGenesis = this.createGenesis.bind(this);
+        // create genesis block
+        this.createGenesis();
+        // this.getBlock = this.getBlock.bind(this);
+        this.getAddresses = this.getAddresses.bind(this);
+        this.getAddresses = this.getAddresses.bind(this);
+    }
+
+    createGenesis() {
         // Blockchain attributes
         this.chain = [];
         this.pendingTransactions = [];
@@ -20,7 +30,6 @@ class Blockchain {
             nonce: 0,
             minedBy: '00000000000000000000000000000000'
         }));
-        this.getAddresses = this.getAddresses.bind(this);
     }
 
     getAddresses() {

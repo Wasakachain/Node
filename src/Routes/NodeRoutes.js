@@ -5,25 +5,25 @@ const Router = require('express').Router();
 Router.get('/info', Controller.nodeIndex);
 // debugging routes
 Router.get('/debug', Controller.debug);
-Router.get('/debug/reset-chain', Controller.resetChain);
+Router.get('/debug/reset-chain', Controller.resetChain); //done
 Router.post('/debug/mine/:minerAddress/:difficulty', Controller.getMinerDifficulty);
 // balances routes
-Router.get('/balances', Controller.balances);
+Router.get('/balances', Controller.balances); //done
 Router.get('/address/:address/balance', Controller.addressBalance);
-Router.get('/address/:address/transactions', Controller.addressTransactions);
+Router.get('/address/:address/transactions', Controller.addressTransactions); //done
 // mining routes
 Router.get('/mining/get-mining-job/:miner-address', Controller.startMiner);
 Router.post('/mining/submit-mined-block', Controller.addBlock);
 // peers routes
 Router.post('/peers', Controller.showPeers);
-Router.post('/peers/connect', Controller.connectPeer);
+Router.post('/peers/connect', Controller.connectPeer); //necessary audit
 Router.post('/peers/notify-new-block', Controller.broadcastBlocks);
 // defining the routes for the block model
 Router.get('/blocks', Controller.blockIndex);
 Router.get('/blocks/:index', Controller.blockByIndex);
 // defining the routes for the Transaction model
-Router.get('transactions/', Controller.transactionIndex);
-Router.get('transactions/:hash', Controller.show);
+Router.get('/transactions/', Controller.transactionIndex);
+Router.get('/transactions/:hash', Controller.show); //necessary audit
 Router.get('/transactions/pending', Controller.pendingTransactions);
 Router.get('/transactions/confirmed', Controller.confirmedTransactions);
 Router.post('transactions/send', Controller.send);

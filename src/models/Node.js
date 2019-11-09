@@ -2,7 +2,7 @@ const Blockchain = require('./Blockchain');
 
 class Node {
     constructor() {
-        this.blockchain = new Blockchain();
+        this.generateWasakaChain();
         this.nodeID;
     }
 
@@ -17,6 +17,10 @@ class Node {
             });
         }
         return null;
+    }
+
+    generateWasakaChain() {
+        return this.blockchain = new Blockchain();
     }
 }
 

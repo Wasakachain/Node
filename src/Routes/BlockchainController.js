@@ -1,5 +1,6 @@
 const node = new (require('../models/Node'))();
 const { request, address } = require('../utils/functions');
+
 class BlockchainController {
   // node index
   static nodeIndex(req, response) {
@@ -19,7 +20,8 @@ class BlockchainController {
   }
 
   static resetChain(req, response) {
-    return response.send({ message: 'the chain was reset to its genesis block' });
+    node.generateWasakaChain();
+    return response.send({ message: 'The chain was reset to its genesis block' });
   }
 
   static balances(_, response) {
@@ -27,7 +29,7 @@ class BlockchainController {
     if (addressesInfo) {
       return response.send({ addressesBalances: addressesInfo });
     }
-    return response.status(400).send({ message: 'No Addresses Found' })
+    return response.status(404).send({ message: 'No Addresses Found' })
   }
 
   static startMiner(req, response) {
@@ -56,18 +58,14 @@ class BlockchainController {
       return response.send({ message: `Connected to peer: ${peerUrl}` });
 
     } catch (error) {
-      if (error.status === 409) {
-        console.log('\x1b[31m%s\x1b[0m', `Connected to peer ${peerUrl}`);
-        return response.send({ message: `Connected to peer: ${peerUrl}` })
-      }
-
-      return response.status(500).send(error)
+      return response.status(500).send(error);
     }
   }
 
   static broadcastBlocks(req, response) {
     return response.send({ message: 'blockchain broadcasted to all peers connected' });
   }
+
   // transactions methods
   static addressBalance(req, response) {
     return response.send({ message: `this is the address ${req.params.address} balance` });
@@ -79,23 +77,27 @@ class BlockchainController {
     let transactions = [...node.blockchain.confirmedTransactions, ...node.blockchain.pendingTransactions]
       .filter((transaction) => transaction.from === address || transaction.to === address);
 
-    if (!transactions) {
-      return response.status(404).send({ message: 'No transactions found' });
+    if (!transactions.length > 0) {
+      return response.status(404).send({ address, message: 'No transactions found for address' });
     }
 
-    return response.send({ transactions });
+    return response.send({transactions });
   }
+
   // blockchain methods
   static addBlock(req, response) {
     return response.send({ message: `block added` });
   }
+
   // block methods
   static blockIndex(req, response) {
     return response.send({ message: `block` });
   }
+
   static blockByIndex(req, response) {
     return response.send({ message: `block${req.params.index}` });
   }
+
   // transaction methods
   static transactionIndex(_, response) {
     return response.send({ message: 'this are all the transactions' });
@@ -122,11 +124,11 @@ class BlockchainController {
   }
 
   static pendingTransactions(_, response) {
-    return response.send({ transactions: blockchain.pendingTransactions });
+    return response.send({ transactions: node.blockchain.pendingTransactions });
   }
 
   static confirmedTransactions(_, response) {
-    return response.send({ transactions: blockchain.confirmedTransactions });
+    return response.send({ transactions: node.blockchain.confirmedTransactions});
   }
 
   static send(_, response) {
