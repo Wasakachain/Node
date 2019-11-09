@@ -25,8 +25,9 @@ class BlockchainController {
     return response.status(404).send({ message: 'No Addresses Found' })
   }
 
-  static startMiner(req, response) {
-    return response.send({ message: 'mining block' });
+  static startMiner(request , response) {
+    const {minerAddress} = request.params;
+    return  node.getNewBlockInfo(minerAddress).then(block => response.json(block));
   }
 
   static getMinerDifficulty(req, response) {
