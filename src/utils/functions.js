@@ -1,13 +1,14 @@
 const http = require('http');
 const https = require('https');
 const Url = require('url');
+const querystring = require('querystring');
 
 function setHeaders(data) {
     let header = {
         'Content-Type': 'application/x-www-form-urlencoded'
     }
     if (data) {
-        header['Content-Length'] = Buffer.byteLength(JSON.stringify(data));
+        header['Content-Length'] = Buffer.byteLength(querystring.stringify(data));
     }
     return header;
 }
@@ -41,7 +42,7 @@ exports.request = (url, method, data) => {
         });
 
         if (data) {
-            req.write(JSON.stringify(data));
+            req.write(querystring.stringify(data));
         }
 
         req.end();
