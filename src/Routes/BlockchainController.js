@@ -1,5 +1,5 @@
 const node = new (require('../models/Node'))();
-const { request } = require('../utils/functions');
+const { request, address } = require('../utils/functions');
 class BlockchainController {
   // node index
   static nodeIndex(req, response) {
@@ -39,20 +39,28 @@ class BlockchainController {
   }
 
   static showPeers(req, response) {
-    return response.send({ peers: node.blockchain.peers });
+    return response.send(node.blockchain.peers);
   }
 
   static async connectPeer(req, response) {
-    const { peer } = req.body;
-    console.log(peer)
+    const { peerUrl } = req.body;
     try {
-      let res = await request(`${peer}/info`);
+      let res = await request(`${peerUrl}/info`);
       if (node.blockchain.peers[res.nodeID]) {
-        return response.status(409).send({ errorMsg: `Already connected to peer: ${peer}` });
+        return response.status(409).send({ errorMsg: `Already connected to peer: ${peerUrl}` });
       }
-      node.blockchain.peers[res.nodeID];
-      await request(`${peer}/peers/connect`, 'POST', { peer: 'http://localhost:5555' });
+      node.blockchain.peers[res.nodeID] = peerUrl;
+      await request(`${peerUrl}/peers/connect`, 'POST', { peerUrl: address() })
+
+      console.log('\x1b[31m%s\x1b[0m', `Connected to peer ${peerUrl}`);
+      return response.send({ message: `Connected to peer: ${peerUrl}` });
+
     } catch (error) {
+      if (error.status === 409) {
+        console.log('\x1b[31m%s\x1b[0m', `Connected to peer ${peerUrl}`);
+        return response.send({ message: `Connected to peer: ${peerUrl}` })
+      }
+
       return response.status(500).send(error)
     }
   }
