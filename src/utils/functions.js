@@ -64,7 +64,7 @@ exports.isValidAddress = function (address) {
         return false;
 }
 
-function generateNodeId() {
+exports.generateNodeId = () => {
     return crypto
         .createHash('sha256')
         .update((new Date()).toISOString() + uuidv4())
