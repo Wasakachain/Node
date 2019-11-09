@@ -41,7 +41,6 @@ class BlockchainController {
 
   static async connectPeer(req, response) {
     const { peerUrl } = req.body;
-    // console.log('hello');
     try {
       let res = await request(`${peerUrl}/info`, 'GET');
       if (node.blockchain.peers[res.data.nodeID]) {
@@ -59,7 +58,7 @@ class BlockchainController {
         return response.send({ message: `Connected to peer: ${peerUrl}` })
       }
 
-      return response.status(500).send(error)
+      return response.status(400).send(error)
     }
   }
 
@@ -69,6 +68,7 @@ class BlockchainController {
 
   // transactions methods
   static addressBalance(req, response) {
+    console.log(req.params.address)
     return response.send({ message: `this is the address ${req.params.address} balance` });
   }
 
