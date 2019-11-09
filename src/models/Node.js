@@ -30,15 +30,15 @@ class Node {
 
             if (res.cumulativeDifficulty > this.cumulativeDifficulty) {
                 res = await request(`${node}/blocks`);
-                if (!Blockchain.verifyChain(res.chain)) return;
+                if (!Blockchain.verifyChain(res.blockchain)) return;
 
-                let newChain = res.chain;
+                let newChain = res.blockchain;
 
                 let resTxs = await request(`${node}/transactions/pending`);
                 let newTransactions = this.synchronizeTransactions(resTxs.transactions);
 
                 if (newChain && newTransactions) {
-                    this.chain = newChain;
+                    this.blockchain = newChain;
                     this.pendingTransactions = newTransactions;
                 }
             }
@@ -60,7 +60,7 @@ class Node {
 
     createGenesis() {
         // Blockchain attributes
-        this.chain = [];
+        this.blockchain = [];
         this.pendingTransactions = [];
         this.confirmedTransactions = [];
         this.blocksCount = 0;
@@ -69,7 +69,7 @@ class Node {
         this.cumulativeDifficulty = 0;
         this.miningJobs = [];
         //Create genesis block
-        this.chain.push(new Block({
+        this.blockchain.push(new Block({
             index: 0,
             prevBlockHash: '0',
             previousDifficulty: 0,
@@ -77,7 +77,7 @@ class Node {
             nonce: 0,
             minedBy: '00000000000000000000000000000000',
         }));
-        this.id = `${new Date().toISOString()}${this.chain[0].blockHash}`;
+        this.id = `${new Date().toISOString()}${this.blockchain[0].blockHash}`;
     }
 
     index() {
@@ -123,7 +123,7 @@ class Node {
             peers: this.peers,
             chain: {
                 chainID: this.id,
-                blocks: this.chain,
+                blocks: this.blockchain,
                 cumulativeDifficulty: this.cumulativeDifficulty,
             },
             pendingTransactions: this.pendingTransactions,
