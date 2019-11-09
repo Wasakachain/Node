@@ -56,7 +56,7 @@ exports.request = (url, method, data) => {
     })
 };
 
-function generateNodeId() {
+exports.generateNodeId = () => {
     return crypto
         .createHash('sha256')
         .update((new Date()).toISOString() + uuidv4())

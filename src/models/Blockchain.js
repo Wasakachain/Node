@@ -8,7 +8,7 @@ class Blockchain {
         this.createGenesis();
         // this.getBlock = this.getBlock.bind(this);
         this.getAddresses = this.getAddresses.bind(this);
-        this.getAddresses = this.getAddresses.bind(this);
+        this.getInfo = this.getInfo.bind(this);
     }
 
     createGenesis() {
@@ -28,8 +28,19 @@ class Blockchain {
             previousDifficulty: 0,
             pendingTransactions: this.pendingTransactions,
             nonce: 0,
-            minedBy: '00000000000000000000000000000000'
+            minedBy: '00000000000000000000000000000000',
         }));
+        this.id = `${new Date().toISOString()}${this.chain[0].blockHash}`;
+    }
+
+    getInfo() {
+        return {
+            chainID: this.id,
+            blocksCount: this.blocksCount,
+            cumulativeDifficulty: this.cumulativeDifficulty,
+            confirmedTransactions: this.confirmedTransactions.length,
+            pendingTransactions: this.pendingTransactions.length,
+        }
     }
 
     getAddresses() {

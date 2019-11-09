@@ -3,15 +3,10 @@ const { request, address } = require('../utils/functions');
 
 class BlockchainController {
   // node index
-  static nodeIndex(req, response) {
+  static nodeIndex(_, response) {
+    let nodeData = node.index();
     return response.send({
-      about: 'foo',
-      nodeID: 'foo',
-      chainID: 'foo',
-      nodeUrl: 'foo',
-      peers: 'foo',
-      blocksCount: 'foo',
-      confirmedTransactions: 'foo',
+      ...nodeData
     });
   }
 
@@ -87,7 +82,7 @@ class BlockchainController {
       return response.status(404).send({ address, message: 'No transactions found for address' });
     }
 
-    return response.send({transactions });
+    return response.send({ transactions });
   }
 
   // blockchain methods
@@ -134,7 +129,7 @@ class BlockchainController {
   }
 
   static confirmedTransactions(_, response) {
-    return response.send({ transactions: node.blockchain.confirmedTransactions});
+    return response.send({ transactions: node.blockchain.confirmedTransactions });
   }
 
   static send(_, response) {
