@@ -1,18 +1,49 @@
 const Block = require('./Block');
-const { request, generateNodeId, address } = require('../utils/functions');
+const { request, generateNodeId, address, newPeerConnected } = require('../utils/functions');
 
 class Node {
     constructor() {
         this.createGenesis = this.createGenesis.bind(this);
         this.generateNodeId = this.generateNodeId.bind(this);
+
         // create genesis block
         this.generateNodeId();
         this.createGenesis();
+
         // this.getBlock = this.getBlock.bind(this);
         this.getAddresses = this.getAddresses.bind(this);
         this.getFullInfo = this.getFullInfo.bind(this);
         this.getGeneralInfo = this.getGeneralInfo.bind(this);
         this.getConfirmedBalances = this.getConfirmedBalances.bind(this);
+        this.onPeeerConnected = this.onPeeerConnected.bind(this);
+        newPeerConnected.addListener('connection', this.onPeeerConnected)
+    }
+
+    async onPeeerConnected(peer) {
+        await this.synchronizeChain(peer);
+    }
+
+    async synchronizeChain(node) {
+        // Implement chain verification
+        try {
+            let res = await request(`${node}/info`)
+
+            if (res.cumulativeDifficulty > this.cumulativeDifficulty) {
+                res = await request(`${node}/blocks`);
+                if (!Blockchain.verifyChain(res.chain)) return;
+
+                let newChain = res.chain;
+
+                let resTxs = await request(`${node}/transactions/pending`);
+                let newTransactions = this.synchronizeTransactions(resTxs.transactions);
+
+                if (newChain && newTransactions) {
+                    this.chain = newChain;
+                    this.pendingTransactions = newTransactions;
+                }
+            }
+        } catch (error) { }
+        console.log(`syncronized with ${node}`)
     }
 
     checkPeers() {
@@ -142,33 +173,6 @@ class Node {
             }
         }
         return true;
-    }
-
-    async synchronizeChain() {
-        // Implement chain verification
-        let newChain = null;
-        let newTransactions = null;
-        for (const node in this.peers) {
-            try {
-                let res = await request(`${node}/info`)
-
-                if (res.cumulativeDifficulty > this.cumulativeDifficulty) {
-                    res = await request(`${node}/blocks`);
-                    if (!Blockchain.verifyChain(res.chain)) return;
-
-                    newChain = res.chain;
-
-                    let resTxs = await request(`${node}/transactions/pending`);
-                    newTransactions = this.synchronizeTransactions(resTxs.transactions);
-                }
-
-            } catch (error) { }
-        }
-
-        if (newChain && newTransactions) {
-            this.chain = newChain;
-            this.pendingTransactions = newTransactions;
-        }
     }
 
     addAddress(addressData) {

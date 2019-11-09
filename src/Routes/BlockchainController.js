@@ -1,13 +1,11 @@
 const node = new (require('../models/Node'))();
-const { request, address } = require('../utils/functions');
+const { request, address, newPeerConnected } = require('../utils/functions');
 
 class BlockchainController {
   // node index
   static nodeIndex(_, response) {
     let nodeData = node.index();
-    return response.send({
-      ...nodeData
-    });
+    return response.send(nodeData);
   }
 
   static debug(req, response) {
@@ -50,14 +48,19 @@ class BlockchainController {
       await request(`${peerUrl}/peers/connect`, 'POST', { peerUrl: address() })
 
       console.log('\x1b[46m%s\x1b[0m', `Connected to peer ${peerUrl}`);
+      newPeerConnected.emit('connection', peerUrl);
+
       return response.send({ message: `Connected to peer: ${peerUrl}` });
 
     } catch (error) {
       if (error.status === 409) {
         console.log('\x1b[46m%s\x1b[0m', `Connected to peer ${peerUrl}`);
+        newPeerConnected.emit('connection', peerUrl);
+
         return response.send({ message: `Connected to peer: ${peerUrl}` })
       }
 
+      console.log('\x1b[46m%s\x1b[0m', `Connection to peer ${peerUrl} failed`);
       return response.status(400).send(error)
     }
   }

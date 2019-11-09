@@ -6,6 +6,10 @@ const ip = require('ip');
 const crypto = require('crypto');
 const uuidv4 = require('uuid/v4');
 
+const events = require('events');
+
+exports.newPeerConnected = new events.EventEmitter();
+
 function setHeaders(data) {
     let header = {
         'Content-Type': 'application/x-www-form-urlencoded'
