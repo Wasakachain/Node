@@ -11,7 +11,6 @@ App.use(Express.urlencoded({ extended: true }));
 // App routes
 App.use('/', Routes);
 
-// App.use(Express.json);
 // turn on the server
 App.listen(PORT, () => {
     console.log('\x1b[36m%s\x1b[0m', `Node server is running on port ${PORT}!`);

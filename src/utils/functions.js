@@ -2,6 +2,7 @@ const http = require('http');
 const https = require('https');
 const Url = require('url');
 const querystring = require('querystring');
+const ip = require('ip');
 
 function setHeaders(data) {
     let header = {
@@ -11,6 +12,10 @@ function setHeaders(data) {
         header['Content-Length'] = Buffer.byteLength(querystring.stringify(data));
     }
     return header;
+}
+
+exports.address = function () {
+    return 'http://' + ip.address() + ':' + (process.env.port || 5555);
 }
 
 exports.request = (url, method, data) => {
