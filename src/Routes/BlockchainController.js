@@ -46,6 +46,7 @@ class BlockchainController {
 
   static async connectPeer(req, response) {
     const { peerUrl } = req.body;
+    // console.log(req);
     try {
       let res = await request(`${peerUrl}/info`);
       if (node.blockchain.peers[res.nodeID]) {
@@ -103,7 +104,7 @@ class BlockchainController {
     return response.send({ message: 'this are all the transactions' });
   }
 
-  static show(_, response) {
+  static show(request, response) {
     const { hash } = request.params;
 
     if (!/^0x([A-Fa-f0-9]{64})$/.test(hash)) {
