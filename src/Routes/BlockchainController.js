@@ -1,5 +1,5 @@
 const node = new (require('../models/Node'))();
-
+const { request } = require('../utils/functions');
 class BlockchainController {
   // node index
   static nodeIndex(req, response) {
@@ -39,11 +39,22 @@ class BlockchainController {
   }
 
   static showPeers(req, response) {
-    return response.send({ message: 'this are all the peers connected' });
+    return response.send({ peers: node.blockchain.peers });
   }
 
-  static connectPeer(req, response) {
-    return response.send({ message: '¡succesfully connected peer!\n¡Welcome to WasakaChain!' });
+  static async connectPeer(req, response) {
+    const { peer } = req.body;
+    console.log(peer)
+    try {
+      let res = await request(`${peer}/info`);
+      if (node.blockchain.peers[res.nodeID]) {
+        return response.status(409).send({ errorMsg: `Already connected to peer: ${peer}` });
+      }
+      node.blockchain.peers[res.nodeID];
+      await request(`${peer}/peers/connect`, 'POST', { peer: 'http://localhost:5555' });
+    } catch (error) {
+      return response.status(500).send(error)
+    }
   }
 
   static broadcastBlocks(req, response) {

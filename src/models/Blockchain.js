@@ -7,7 +7,7 @@ class Blockchain {
         this.pendingTransactions = [];
         this.confirmedTransactions = [];
         this.blocksCount = 0;
-        this.peers = [];
+        this.peers = {};
         this.addresses = [];
         this.cumulativeDifficulty = 0;
         this.miningJobs = [];
@@ -20,7 +20,6 @@ class Blockchain {
             nonce: 0,
             minedBy: '00000000000000000000000000000000'
         }));
-        this.getBlock = this.getBlock.bind(this);
         this.getAddresses = this.getAddresses.bind(this);
     }
 
@@ -37,6 +36,16 @@ class Blockchain {
         this.cumulativeDifficulty += Math.pow(16, blockDifficulty)
     }
 
+    isValidChain() {
+
+    }
+
+    synchronizeTransactions(nodeTransactions) {
+        return [...this.pendingTransactions, ...nodeTransactions.filter((transaction) => {
+            return this.pendingTransactions.find((tx) => tx.transactionDataHash === transaction.transactionDataHash) ? false : true;
+        })];
+    }
+
     async registerNode(address) {
         try {
             const res = await request(`${address}/info`);
@@ -47,20 +56,24 @@ class Blockchain {
     }
 
     async synchronizeChain() {
-        // TO DO
+        // Implement chain verification
         let newChain = null;
-        this.peers.forEach((peer) => {
+        let newTransactions = null;
+        for (const node in this.peers) {
             try {
                 let res = await request(`${node}/info`)
                 if (res.cumulativeDifficulty > this.cumulativeDifficulty) {
                     res = await request(`${node}/blocks`);
                     newChain = res.chain;
+                    let resTxs = await request(`${node}/transactions/pending`);
+                    newTransactions = this.synchronizeTransactions(resTxs.transactions);
                 }
             } catch (error) { }
-        });
+        }
 
-        if (newChain) {
+        if (newChain && newTransactions) {
             this.chain = newChain;
+            this.pendingTransactions = newTransactions;
         }
     }
 

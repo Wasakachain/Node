@@ -1,4 +1,5 @@
 const { sha256 } = require('../utils/hash');
+const { verifySignature } = require('../utils/hash');
 
 class Transaction {
     constructor(from, to, value, fee, senderPubKey, data, senderSignature, minedInBlockIndex, transferSuccessful = false) {
@@ -39,6 +40,10 @@ class Transaction {
             minedInBlockIndex,
             transferSuccessful
         }
+    }
+
+    verify() {
+        return verifySignature(this.transactionDataHash, this.senderPubKey, this.senderSignature);
     }
 }
 
