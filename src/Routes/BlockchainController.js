@@ -44,6 +44,10 @@ class BlockchainController {
       if (node.peers[res.data.nodeID]) {
         return response.status(409).send({ errorMsg: `Already connected to peer: ${peerUrl}` });
       }
+      if (res.data.nodeID === node.nodeID) {
+        return response.status(400).send({ error: 'Invalid peer url' })
+      }
+
       node.peers[res.data.nodeID] = peerUrl;
       await request(`${peerUrl}/peers/connect`, 'POST', { peerUrl: address() })
 
