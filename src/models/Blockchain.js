@@ -8,7 +8,9 @@ class Blockchain {
         this.createGenesis();
         // this.getBlock = this.getBlock.bind(this);
         this.getAddresses = this.getAddresses.bind(this);
-        this.getInfo = this.getInfo.bind(this);
+        this.getFullInfo = this.getFullInfo.bind(this);
+        this.getGeneralInfo = this.getGeneralInfo.bind(this);
+        this.getConfirmedBalances = this.getConfirmedBalances.bind(this);
     }
 
     createGenesis() {
@@ -33,13 +35,27 @@ class Blockchain {
         this.id = `${new Date().toISOString()}${this.chain[0].blockHash}`;
     }
 
-    getInfo() {
+    getGeneralInfo() {
         return {
             chainID: this.id,
             blocksCount: this.blocksCount,
             cumulativeDifficulty: this.cumulativeDifficulty,
             confirmedTransactions: this.confirmedTransactions.length,
             pendingTransactions: this.pendingTransactions.length,
+            peers: this.peers
+        }
+    }
+
+    async getFullInfo() {
+        return {
+            peers: this.peers,
+            chain: {
+                chainID: this.id,
+                blocks: this.chain,
+                cumulativeDifficulty: this.cumulativeDifficulty,
+            },
+            pendingTransactions: this.pendingTransactions,
+            confirmedBalances: await this.getConfirmedBalances()
         }
     }
 
@@ -104,6 +120,14 @@ class Blockchain {
             confirmedBalance: 0,
             pendingBalance: 0
         });
+    }
+
+    getConfirmedBalances() {
+        let addresses = this.getAddresses();
+        if (addresses) {
+            return addresses.filter(({ confirmedBalance }) => confirmedBalance !== 0);
+        }
+        return [];
     }
 
 }

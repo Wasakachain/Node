@@ -11,7 +11,7 @@ class BlockchainController {
   }
 
   static debug(req, response) {
-    return response.send({ message: 'enjoy debugging!' });
+    return node.debugInfo().then(data => response.json(data))
   }
 
   static resetChain(req, response) {
@@ -20,7 +20,7 @@ class BlockchainController {
   }
 
   static balances(_, response) {
-    let addressesInfo = node.getAddressesBalances();
+    let addressesInfo = node.getAddressesSafeBalances();
     if (addressesInfo) {
       return response.send({ addressesBalances: addressesInfo });
     }
@@ -92,15 +92,23 @@ class BlockchainController {
 
   // block methods
   static blockIndex(req, response) {
-    return response.send({ message: `block` });
+    return response.send(node.blockchain.chain);
   }
 
-  static blockByIndex(req, response) {
-    return response.send({ message: `block${req.params.index}` });
+  static blockByIndex(request, response) {
+    const { index: requestedIndex } = request.params;
+    const block = node.blockchain.chain.find( ({ index: { index } }) => index == requestedIndex);
+    if (block) {
+      return response.json(block);
+    }
+    return response.status(404).send({
+      index: requestedIndex,
+      message: `Block not Found in chain`
+    });
   }
 
   // transaction methods
-  static transactionIndex(_, response) {
+  static transactionIndex(request, response) {
     return response.send({ message: 'this are all the transactions' });
   }
 
