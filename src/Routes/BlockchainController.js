@@ -46,7 +46,7 @@ class BlockchainController {
 
   static async connectPeer(req, response) {
     const { peerUrl } = req.body;
-    // console.log(req);
+    // console.log('hello');
     try {
       let res = await request(`${peerUrl}/info`, 'GET');
       if (node.blockchain.peers[res.data.nodeID]) {
