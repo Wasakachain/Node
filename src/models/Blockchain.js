@@ -1,16 +1,67 @@
 const Block = require('./Block');
-const { request } = require('../utils/functions');
+const { request, address } = require('../utils/functions');
 
-class Blockchain {
+class Node {
     constructor() {
+        this.nodeID;
+        this.peers = {};
+
+        this.generateNodeId = this.generateNodeId.bind(this);
+        this.getNodeInfo = this.getNodeInfo.bind(this);
+        this.generateNodeId();
+
         this.createGenesis = this.createGenesis.bind(this);
         // create genesis block
+
         this.createGenesis();
-        // this.getBlock = this.getBlock.bind(this);
         this.getAddresses = this.getAddresses.bind(this);
         this.getFullInfo = this.getFullInfo.bind(this);
         this.getGeneralInfo = this.getGeneralInfo.bind(this);
         this.getConfirmedBalances = this.getConfirmedBalances.bind(this);
+    }
+
+
+    info() {
+        let blockchainData = this.getGeneralInfo();
+        return {
+            about: 'WasakaChain Blockchain Node',
+            nodeID: this.nodeID,
+            nodeUrl: address(),
+            ...blockchainData
+        }
+    }
+
+    async debugInfo() {
+        let nodeInfo = this.getNodeInfo();
+        let blockchainFullInfo = await this.getFullInfo();
+        return {
+            ...nodeInfo,
+            ...blockchainFullInfo
+        };
+    }
+
+    getNodeInfo() {
+        return {
+            selfUrl: address(),
+            nodeID: this.nodeID,
+        }
+    }
+
+    async generateNodeId() {
+        this.nodeID = await generateNodeId();
+    }
+
+    getAddressesSafeBalances() {
+        let addresses = this.getAddresses();
+        if (addresses) {
+            return addresses.filter(({ confirmedBalance }) => confirmedBalance !== 0)
+                .map(({ address, safeBalance }) => {
+                    return {
+                        [address]: safeBalance
+                    };
+                });
+        }
+        return null;
     }
 
     checkPeers() {
@@ -27,16 +78,15 @@ class Blockchain {
 
     createGenesis() {
         // Blockchain attributes
-        this.chain = [];
+        this.blockchain = [];
         this.pendingTransactions = [];
         this.confirmedTransactions = [];
         this.blocksCount = 0;
-        this.peers = {};
         this.addresses = [];
         this.cumulativeDifficulty = 0;
         this.miningJobs = [];
         //Create genesis block
-        this.chain.push(new Block({
+        this.blockchain.push(new Block({
             index: 0,
             prevBlockHash: '0',
             previousDifficulty: 0,
@@ -44,7 +94,7 @@ class Blockchain {
             nonce: 0,
             minedBy: '00000000000000000000000000000000',
         }));
-        this.id = `${new Date().toISOString()}${this.chain[0].blockHash}`;
+        this.id = `${new Date().toISOString()}${this.blockchain[0].blockHash}`;
     }
 
     getGeneralInfo() {
@@ -63,7 +113,7 @@ class Blockchain {
             peers: this.peers,
             chain: {
                 chainID: this.id,
-                blocks: this.chain,
+                blocks: this.blockchain,
                 cumulativeDifficulty: this.cumulativeDifficulty,
             },
             pendingTransactions: this.pendingTransactions,
@@ -90,9 +140,17 @@ class Blockchain {
         })];
     }
 
-    notifyNewBlock() {
-        Object.values(this.peers).forEach((peer) => {
-
+    notifyPeers() {
+        if (Object.keys(this.peers).length === 0) return;
+        Object.keys(this.peers).forEach((key) => {
+            request(`${this.peers[key]}/peers/notify-new-block`, 'POST', {
+                blocksCount: this.blockchain.length,
+                cumulativeDifficulty: this.cumulativeDifficulty,
+                nodeUrl: address(),
+            }).catch((err) => {
+                // console.log('\x1b[32m%s\x1b[0m', ``)
+                delete this.peers[key];
+            });
         });
     }
 
@@ -115,31 +173,29 @@ class Blockchain {
         return true;
     }
 
-    async synchronizeChain() {
+    async synchronizeChain(node) {
         // Implement chain verification
-        let newChain = null;
-        let newTransactions = null;
-        for (const node in this.peers) {
-            try {
-                let res = await request(`${node}/info`)
+        try {
+            let res = await request(`${node}/info`)
 
-                if (res.cumulativeDifficulty > this.cumulativeDifficulty) {
-                    res = await request(`${node}/blocks`);
-                    if (!Blockchain.verifyChain(res.chain)) return;
+            if (res.cumulativeDifficulty > this.cumulativeDifficulty) {
+                res = await request(`${node}/blocks`);
+                if (!Node.verifyChain(res.blockchain)) return;
 
-                    newChain = res.chain;
+                let newChain = res.blockchain;
+                let resTxs = await request(`${node}/transactions/pending`);
 
-                    let resTxs = await request(`${node}/transactions/pending`);
-                    newTransactions = this.synchronizeTransactions(resTxs.transactions);
+                let newTransactions = this.synchronizeTransactions(resTxs.transactions);
+
+                if (newChain && newTransactions) {
+                    this.blockchain = newChain;
+                    this.pendingTransactions = newTransactions;
                 }
+            }
 
-            } catch (error) { }
-        }
 
-        if (newChain && newTransactions) {
-            this.chain = newChain;
-            this.pendingTransactions = newTransactions;
-        }
+        } catch (error) { }
+
     }
 
     addAddress(addressData) {
@@ -161,4 +217,4 @@ class Blockchain {
 
 }
 
-module.exports = Blockchain;
+module.exports = Node;

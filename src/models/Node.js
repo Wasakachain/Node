@@ -1,5 +1,5 @@
 const Blockchain = require('./Blockchain');
-const {generateNodeId, address} = require('../utils/functions');
+const { generateNodeId, address } = require('../utils/functions');
 
 class Node {
     constructor() {
@@ -8,6 +8,7 @@ class Node {
         this.generateNodeId();
         this.generateWasakaChain();
         this.nodeID;
+        this.peers = {};
     }
 
     index() {
