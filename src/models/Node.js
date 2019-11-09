@@ -1,10 +1,12 @@
 const Block = require('./Block');
-const { request } = require('../utils/functions');
+const { request, generateNodeId, address } = require('../utils/functions');
 
 class Node {
     constructor() {
         this.createGenesis = this.createGenesis.bind(this);
+        this.generateNodeId = this.generateNodeId.bind(this);
         // create genesis block
+        this.generateNodeId();
         this.createGenesis();
         // this.getBlock = this.getBlock.bind(this);
         this.getAddresses = this.getAddresses.bind(this);
@@ -46,6 +48,33 @@ class Node {
         }));
         this.id = `${new Date().toISOString()}${this.chain[0].blockHash}`;
     }
+
+    index() {
+        let blockchainData = this.getGeneralInfo();
+        return {
+            about: 'WasakaChain Blockchain Node',
+            nodeID: this.nodeID,
+            nodeUrl: address(),
+            ...blockchainData
+        }
+    }
+
+    async debugInfo() {
+        let nodeInfo = this.getNodeInfo();
+        let blockchainFullInfo = await this.getFullInfo();
+        return {
+            ...nodeInfo,
+            ...blockchainFullInfo
+        };
+    }
+
+    getNodeInfo() {
+        return {
+            selfUrl: address(),
+            nodeID: this.nodeID,
+        }
+    }
+
 
     getGeneralInfo() {
         return {
@@ -159,6 +188,22 @@ class Node {
         return [];
     }
 
+    async generateNodeId() {
+        this.nodeID = await generateNodeId();
+    }
+
+    getAddressesSafeBalances() {
+        let addresses = this.getAddresses();
+        if (addresses) {
+            return addresses.filter(({ confirmedBalance }) => confirmedBalance !== 0)
+                .map(({ address, safeBalance }) => {
+                    return {
+                        [address]: safeBalance
+                    };
+                });
+        }
+        return null;
+    }
 }
 
 module.exports = Node;

@@ -1,4 +1,4 @@
-const node = new (require('../models/Blockchain'))();
+const node = new (require('../models/Node'))();
 const { request, address } = require('../utils/functions');
 
 class BlockchainController {
