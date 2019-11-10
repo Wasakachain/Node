@@ -22,13 +22,13 @@ class Block {
     }
 
     __validHash() {
-        return sha256({ blockDataHash: this.blockDataHash, dateCreated: this.dateCreated, nonce: this.nonce }) === this.blockHash;
+        return sha256(JSON.stringify({ blockDataHash: this.blockDataHash, dateCreated: this.dateCreated, nonce: this.nonce })) === this.blockHash;
     }
 
 
     static isValid(block) {
         // TO DO: COMPLETE METHOD
-        if ((!block.index || !block.transactions || !block.difficulty || !block.prevBlockHash || !block.minedBy || !block.blockDataHash || !block.blockDataHash || !block.nonce || !block.dateCreated || !block.blockHash) || !this.__validProof() || !this.__validHash()) {
+        if ((!block.index || !block.transactions || !block.difficulty || !block.prevBlockHash || !block.minedBy || !block.blockDataHash || !block.blockDataHash || !block.nonce || !block.dateCreated || !block.blockHash) || !block.__validProof() || !block.__validHash()) {
             return false;
         }
 

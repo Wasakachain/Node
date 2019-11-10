@@ -67,22 +67,10 @@ class Node {
         this.peers = {};
         this.addresses = [];
         this.cumulativeDifficulty = 0;
-        this.currentDifficulty = process.env.difficulty || 4;
+        this.currentDifficulty = process.env.difficulty || 5;
         this.miningJobs = {};
         //Create genesis block
         this.blockchain.push(new Block(0, 1, 0, this.pendingTransactions, 0, '00000000000000000000000000000000'));
-
-        if (!process.env.port) {
-            this.blockchain.push(new Block(0, 1, 0, this.pendingTransactions, 0, '00000000000000000000000000000000'));
-            this.blockchain.push(new Block(0, 1, 0, this.pendingTransactions, 0, '00000000000000000000000000000000'));
-            this.blockchain.push(new Block(0, 1, 0, this.pendingTransactions, 0, '00000000000000000000000000000000'));
-            this.blockchain.push(new Block(0, 1, 0, this.pendingTransactions, 0, '00000000000000000000000000000000'));
-            this.blockchain.push(new Block(0, 1, 0, this.pendingTransactions, 0, '00000000000000000000000000000000'));
-
-            this.blockchain.forEach((block) => {
-                this.addCumulativeDifficulty(block.difficulty)
-            });
-        }
 
         this.id = `${new Date().toISOString()}${this.blockchain[0].blockHash}`;
     }
@@ -218,25 +206,11 @@ class Node {
         // create candidate
         const candidateBlock = new Block(
             this.blockchain.length,
+            this.pendingTransactions,
             this.currentDifficulty,
-            this.blockchain[this.blockchain.length - 1].blockHash,
-            [
-                new Transaction(
-                    '0000000000000000000000000000000000000000',
-                    minerAddress,
-                    process.env.reward || 1,
-                    0,
-                    '0000000000000000000000000000000000000000',
-                    null,
-                    '0000000000000000000000000000000000000000',
-                    this.blockchain.length,
-                    true
-                ),
-                ...this.pendingTransactions,
-            ],
-            null,
-            minerAddress
-        );
+            minerAddress,
+            this.blockchain[this.blockchain.length - 1] ? this.blockchain[this.blockchain.length - 1].blockHash : undefined
+        )
 
         this.miningJobs[candidateBlock.blockDataHash] = candidateBlock;
 

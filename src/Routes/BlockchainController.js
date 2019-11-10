@@ -1,4 +1,5 @@
 const node = new (require('../models/Node'))();
+const Block = require('../models/Block');
 const { request, address, newPeerConnected } = require('../utils/functions');
 
 class BlockchainController {
@@ -104,19 +105,22 @@ class BlockchainController {
 
     block.setMinedData(dateCreated, nonce, blockHash);
 
-    if (!block.isValid()) {
+    if (Block.isValid(block)) {
       return response.status(400).send({ errorMsg: 'Invalid block' });
     }
 
     node.miningJobs = {};
 
     node.pendingTransactions = block.transactions.filter((transaction) => {
-      return node.pendingTransactions.find((tx) => tx.transactionDataHash === transaction.transactionDataHash);
+      return !(node.pendingTransactions.find((tx) => tx.transactionDataHash === transaction.transactionDataHash));
     });
+
+    // TO DO: IMPLEMENT BLOCK BROADCAST
 
     node.blockchain.push(block);
 
-    return response.send({ message: `block added` });
+    console.log('New block mined!');
+    return response.send({ message: `Block accepted, reward paid: ${process.env.reward || 1}` });
   }
 
   // block methods
