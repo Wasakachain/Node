@@ -14,7 +14,7 @@ Router.get('/balances', Controller.balances); //done
 Router.get('/address/:address/balance', Controller.addressBalance);
 Router.get('/address/:address/transactions', Controller.addressTransactions); //done
 // mining routes
-Router.get('/mining/get-mining-job/:miner-address', Controller.startMiner);
+Router.get('/mining/get-mining-job/:minerAddress', Controller.startMiner);
 Router.post('/mining/submit-mined-block', Controller.addBlock);
 // peers routes
 Router.get('/peers', Controller.showPeers); //done

@@ -1,4 +1,5 @@
 const Block = require('./Block');
+const Transaction = require('./Transaction');
 const { request, generateNodeId, address, newPeerConnected } = require('../utils/functions');
 
 class Node {
@@ -12,6 +13,7 @@ class Node {
 
         // this.getBlock = this.getBlock.bind(this);
         this.getAddresses = this.getAddresses.bind(this);
+        this.getNewBlockInfo = this.getNewBlockInfo.bind(this);
         this.getFullInfo = this.getFullInfo.bind(this);
         this.getGeneralInfo = this.getGeneralInfo.bind(this);
         this.getConfirmedBalances = this.getConfirmedBalances.bind(this);
@@ -65,6 +67,7 @@ class Node {
         this.peers = {};
         this.addresses = [];
         this.cumulativeDifficulty = 0;
+        this.currentDifficulty = process.env.difficulty || 4;
         this.miningJobs = [];
         //Create genesis block
         this.blockchain.push(new Block(0, 1, 0, this.pendingTransactions, 0, '00000000000000000000000000000000'));
@@ -108,7 +111,6 @@ class Node {
             nodeID: this.nodeID,
         }
     }
-
 
     getGeneralInfo() {
         return {
@@ -210,6 +212,40 @@ class Node {
                 });
         }
         return null;
+    }
+
+    async getNewBlockInfo(minerAddress) {
+        // create candidate
+        const candidateBlock = await new Block(
+            this.blockchain.length,
+            this.currentDifficulty,
+            this.blockchain[this.blockchain.length - 1].blockHash,
+            [
+                ...this.pendingTransactions,
+                new Transaction(
+                    '0000000000000000000000000000000000000000',
+                    minerAddress,
+                    process.env.reward || 1,
+                    0,
+                    '0000000000000000000000000000000000000000',
+                    null,
+                    '0000000000000000000000000000000000000000',
+                    this.blockchain.length,
+                    true
+                )
+            ],
+            null,
+            minerAddress
+        );
+        return {
+            index: this.blockchain.length,
+            transactionsIncluded: this.pendingTransactions.length,
+            difficulty: this.currentDifficulty,
+            expectedReward: process.env.reward || 1,
+            rewardAddress: minerAddress,
+            blockDataHash: candidateBlock.blockHash,
+            candidateBlock
+        };
     }
 }
 
