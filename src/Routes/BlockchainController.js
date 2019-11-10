@@ -117,7 +117,7 @@ class BlockchainController {
 
     // TO DO: IMPLEMENT BLOCK BROADCAST
 
-    node.blockchain.push(block);
+    node.addBlock(block)
 
     console.log('New block mined!');
     return response.send({ message: `Block accepted, reward paid: ${process.env.reward || 1}` });

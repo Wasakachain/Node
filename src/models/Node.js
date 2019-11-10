@@ -4,21 +4,19 @@ const { request, generateNodeId, address, newPeerConnected } = require('../utils
 
 class Node {
     constructor() {
-        this.createGenesis = this.createGenesis.bind(this);
-        this.generateNodeId = this.generateNodeId.bind(this);
         this.generateNodeId();
-
-        // create genesis block
         this.createGenesis();
 
-        // this.getBlock = this.getBlock.bind(this);
-        this.getAddresses = this.getAddresses.bind(this);
-        this.getNewBlockInfo = this.getNewBlockInfo.bind(this);
-        this.getFullInfo = this.getFullInfo.bind(this);
-        this.getGeneralInfo = this.getGeneralInfo.bind(this);
-        this.getConfirmedBalances = this.getConfirmedBalances.bind(this);
         this.onPeeerConnected = this.onPeeerConnected.bind(this);
         newPeerConnected.addListener('connection', this.onPeeerConnected)
+    }
+
+    cumulativeDifficulty() {
+        let difficulty = 0;
+        this.blockchain.forEach((block) => {
+            difficulty += Math.pow(16, block.difficulty);
+        });
+        return difficulty;
     }
 
     async onPeeerConnected(peer) {
@@ -66,13 +64,13 @@ class Node {
         this.blocksCount = 0;
         this.peers = {};
         this.addresses = [];
-        this.cumulativeDifficulty = 0;
         this.currentDifficulty = process.env.difficulty || 5;
         this.miningJobs = {};
         //Create genesis block
-        this.blockchain.push(new Block(0, 1, 0, this.pendingTransactions, 0, '00000000000000000000000000000000'));
-
+        this.blockchain.push(new Block(1, [], 0, '0'.repeat(40), null));
         this.id = `${new Date().toISOString()}${this.blockchain[0].blockHash}`;
+
+        this.cumulativeDifficulty = this.cumulativeDifficulty();
     }
 
     index() {
@@ -111,7 +109,7 @@ class Node {
         }
     }
 
-    async getFullInfo() {
+    getFullInfo() {
         return {
             peers: this.peers,
             chain: {
@@ -120,7 +118,7 @@ class Node {
                 cumulativeDifficulty: this.cumulativeDifficulty,
             },
             pendingTransactions: this.pendingTransactions,
-            confirmedBalances: await this.getConfirmedBalances()
+            confirmedBalances: this.getConfirmedBalances()
         }
     }
 
@@ -131,6 +129,11 @@ class Node {
         else {
             return false;
         }
+    }
+
+    addBlock(block) {
+        this.blockchain.push(block);
+        this.addCumulativeDifficulty(block.difficulty);
     }
 
     addCumulativeDifficulty(blockDifficulty) {
@@ -185,8 +188,8 @@ class Node {
         return [];
     }
 
-    async generateNodeId() {
-        this.nodeID = await generateNodeId();
+    generateNodeId() {
+        this.nodeID = generateNodeId();
     }
 
     getAddressesSafeBalances() {
