@@ -5,7 +5,7 @@ class BlockchainController {
   // node index
   static nodeIndex(_, response) {
     let nodeData = node.index();
-    return response.send(nodeData);
+    return response.send({ ...nodeData, jobs: node.miningJobs });
   }
 
   static debug(req, response) {
@@ -25,9 +25,9 @@ class BlockchainController {
     return response.status(404).send({ message: 'No Addresses Found' })
   }
 
-  static startMiner(request , response) {
-    const {minerAddress} = request.params;
-    return  node.getNewBlockInfo(minerAddress).then(block => response.json(block));
+  static startMiningJob(request, response) {
+    const { minerAddress } = request.params;
+    return response.send(node.getNewBlockInfo(minerAddress));
   }
 
   static getMinerDifficulty(req, response) {
@@ -95,6 +95,27 @@ class BlockchainController {
 
   // blockchain methods
   static addBlock(req, response) {
+    const { blockDataHash, dateCreated, nonce, blockHash } = req.body;
+    let block = node.miningJobs[blockDataHash]
+
+    if (!block) {
+      return response.status(404).send({ errorMsg: 'Block not found or alreade mined' });
+    }
+
+    block.setMinedData(dateCreated, nonce, blockHash);
+
+    if (!block.isValid()) {
+      return response.status(400).send({ errorMsg: 'Invalid block' });
+    }
+
+    node.miningJobs = {};
+
+    node.pendingTransactions = block.transactions.filter((transaction) => {
+      return node.pendingTransactions.find((tx) => tx.transactionDataHash === transaction.transactionDataHash);
+    });
+
+    node.blockchain.push(block);
+
     return response.send({ message: `block added` });
   }
 

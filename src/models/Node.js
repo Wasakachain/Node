@@ -68,7 +68,7 @@ class Node {
         this.addresses = [];
         this.cumulativeDifficulty = 0;
         this.currentDifficulty = process.env.difficulty || 4;
-        this.miningJobs = [];
+        this.miningJobs = {};
         //Create genesis block
         this.blockchain.push(new Block(0, 1, 0, this.pendingTransactions, 0, '00000000000000000000000000000000'));
 
@@ -214,14 +214,13 @@ class Node {
         return null;
     }
 
-    async getNewBlockInfo(minerAddress) {
+    getNewBlockInfo(minerAddress) {
         // create candidate
-        const candidateBlock = await new Block(
+        const candidateBlock = new Block(
             this.blockchain.length,
             this.currentDifficulty,
             this.blockchain[this.blockchain.length - 1].blockHash,
             [
-                ...this.pendingTransactions,
                 new Transaction(
                     '0000000000000000000000000000000000000000',
                     minerAddress,
@@ -232,19 +231,22 @@ class Node {
                     '0000000000000000000000000000000000000000',
                     this.blockchain.length,
                     true
-                )
+                ),
+                ...this.pendingTransactions,
             ],
             null,
             minerAddress
         );
+
+        this.miningJobs[candidateBlock.blockDataHash] = candidateBlock;
+
         return {
             index: this.blockchain.length,
             transactionsIncluded: this.pendingTransactions.length,
             difficulty: this.currentDifficulty,
             expectedReward: process.env.reward || 1,
             rewardAddress: minerAddress,
-            blockDataHash: candidateBlock.blockHash,
-            candidateBlock
+            blockDataHash: candidateBlock.blockDataHash,
         };
     }
 }
