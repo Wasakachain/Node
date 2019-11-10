@@ -211,9 +211,20 @@ class Node {
         return null;
     }
 
+    calculateMinerReward() {
+        let base_reward = Math.round(
+            (2110 / (this.blockchain.length * this.peers ? Object.keys(this.peers).length : 1)) * (this.pendingTransactions.length ? this.pendingTransactions.length : 1 * 12000)
+        );
+        let fees_sum = 0;
+        this.pendingTransactions.forEach(transaction => {
+            fees_sum += parseInt(transaction.fee);
+        });
+        return base_reward + fees_sum;
+    }
+
     async getNewBlockInfo(minerAddress) {
         // create candidate
-        const candidateBlock = await new Block(
+        const candidateBlock = new Block(
             this.blockchain.length,
             this.currentDifficulty,
             this.blockchain[this.blockchain.length - 1].blockHash,
@@ -222,7 +233,7 @@ class Node {
                 new Transaction(
                     '0000000000000000000000000000000000000000',
                     minerAddress,
-                    process.env.reward || 1,
+                    await this.calculateMinerReward(),
                     0,
                     '0000000000000000000000000000000000000000',
                     null,
