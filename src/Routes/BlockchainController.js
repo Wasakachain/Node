@@ -1,4 +1,5 @@
 const node = new (require('../models/Node'))();
+const Block = require('../models/Block');
 const { request, address, newPeerConnected } = require('../utils/functions');
 
 class BlockchainController {
@@ -25,9 +26,9 @@ class BlockchainController {
     return response.status(404).send({ message: 'No Addresses Found' })
   }
 
-  static startMiner(request , response) {
-    const {minerAddress} = request.params;
-    return  node.getNewBlockInfo(minerAddress).then(block => response.json(block));
+  static startMiningJob(request, response) {
+    const { minerAddress } = request.params;
+    return response.send(node.getNewBlockInfo(minerAddress));
   }
 
   static getMinerDifficulty(req, response) {
@@ -71,7 +72,11 @@ class BlockchainController {
   }
 
   static broadcastBlocks(req, response) {
-    return response.send({ message: 'blockchain broadcasted to all peers connected' });
+    const { cumulativeDifficulty, nodeUrl } = req.body;
+    if (node.shouldDownloadChain(cumulativeDifficulty)) {
+      node.synchronizePeer(nodeUrl);
+    }
+    return response.send({ message: 'Thank you for the notification' });
   }
 
   // transactions methods
@@ -95,7 +100,29 @@ class BlockchainController {
 
   // blockchain methods
   static addBlock(req, response) {
-    return response.send({ message: `block added` });
+    const { blockDataHash, dateCreated, nonce, blockHash } = req.body;
+    let block = node.miningJobs[blockDataHash]
+
+    if (!block) {
+      return response.status(404).send({ errorMsg: 'Block not found or alreade mined' });
+    }
+
+    block.setMinedData(dateCreated, nonce, blockHash);
+
+    if (!Block.isValid(block)) {
+      return response.status(400).send({ errorMsg: 'Invalid block' });
+    }
+
+    node.miningJobs = {};
+
+    node.pendingTransactions = block.transactions.filter((transaction) => {
+      return !(node.pendingTransactions.find((tx) => tx.transactionDataHash === transaction.transactionDataHash));
+    });
+
+    // TO DO: IMPLEMENT BLOCK BROADCAST
+
+    node.addBlock(block)
+    return response.send({ message: `Block accepted, reward paid: ${process.env.reward || 1}` });
   }
 
   // block methods

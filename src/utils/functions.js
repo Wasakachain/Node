@@ -9,6 +9,7 @@ const uuidv4 = require('uuid/v4');
 const events = require('events');
 
 exports.newPeerConnected = new events.EventEmitter();
+exports.newBlock = new events.EventEmitter();
 
 function setHeaders(data) {
     let header = {

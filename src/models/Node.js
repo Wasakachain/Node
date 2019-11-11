@@ -1,63 +1,70 @@
 const Block = require('./Block');
 const Transaction = require('./Transaction');
-const { request, generateNodeId, address, newPeerConnected } = require('../utils/functions');
+const { request, generateNodeId, address, newPeerConnected, newBlock } = require('../utils/functions');
 
 class Node {
     constructor() {
-        this.createGenesis = this.createGenesis.bind(this);
-        this.generateNodeId = this.generateNodeId.bind(this);
-
-        // create genesis block
         this.generateNodeId();
         this.createGenesis();
 
-        // this.getBlock = this.getBlock.bind(this);
-        this.getAddresses = this.getAddresses.bind(this);
-        this.getNewBlockInfo = this.getNewBlockInfo.bind(this);
-        this.getFullInfo = this.getFullInfo.bind(this);
-        this.getGeneralInfo = this.getGeneralInfo.bind(this);
-        this.getConfirmedBalances = this.getConfirmedBalances.bind(this);
         this.onPeeerConnected = this.onPeeerConnected.bind(this);
+        this.onNewBlock = this.onNewBlock.bind(this);
+
         newPeerConnected.addListener('connection', this.onPeeerConnected)
+        newBlock.addListener('new_block', this.onNewBlock);
+    }
+
+    setCumulativeDifficulty() {
+        this.cumulativeDifficulty = 0;
+        this.blockchain.forEach((block) => {
+            this.cumulativeDifficulty += Math.pow(16, block.difficulty);
+        });
+    }
+
+    onNewBlock() {
+        Object.keys(this.peers).forEach(peer => {
+            request(`${this.peers[peer]}/peers/notify-new-block`, 'POST', {
+                blocksCount: this.blockchain.length,
+                cumulativeDifficulty: this.cumulativeDifficulty,
+                nodeUrl: address()
+            }).catch(() => {
+                delete this.peers[peer];
+            });
+        });
     }
 
     async onPeeerConnected(peer) {
-        await this.synchronizeChain(peer);
+        await this.checkBetterChain(peer);
     }
 
-    async synchronizeChain(node) {
-        // Implement chain verification
+    shouldDownloadChain(difficulty) {
+        return difficulty > this.cumulativeDifficulty
+    }
+
+    async checkBetterChain(peer) {
+        let res = await request(`${peer}/info`);
+        if (this.shouldDownloadChain(res.data.cumulativeDifficulty)) {
+            await this.synchronizePeer(peer);
+        }
+    }
+
+    async synchronizePeer(peer) {
         try {
-            let res = await request(`${node}/info`)
-
-            if (res.cumulativeDifficulty > this.cumulativeDifficulty) {
-                res = await request(`${node}/blocks`);
-                if (!Blockchain.verifyChain(res.blockchain)) return;
-
-                let newChain = res.blockchain;
-
-                let resTxs = await request(`${node}/transactions/pending`);
-                let newTransactions = this.synchronizeTransactions(resTxs.transactions);
-
-                if (newChain && newTransactions) {
-                    this.blockchain = newChain;
-                    this.pendingTransactions = newTransactions;
-                }
+            let res = await request(`${peer}/blocks`);
+            if (!Node.verifyChain(res.data)) return;
+            let newChain = res.data;
+            let resTxs = await request(`${peer}/transactions/pending`);
+            let newTransactions = this.synchronizeTransactions(resTxs.data.transactions);
+            if (newChain) {
+                this.blockchain = newChain;
+                this.pendingTransactions = newTransactions;
+                this.setCumulativeDifficulty()
+                newBlock.emit('new_block');
             }
-        } catch (error) { }
-        console.log(`syncronized with ${node}`)
-    }
-
-    checkPeers() {
-        if (Object.keys(this.peers).length === 0) return;
-
-        Object.keys(this.peers).forEach(async (key) => {
-            try {
-                await request(`${this.peers[key]}/info`, 'GET')
-            } catch (error) {
-                delete this.peers[key];
-            }
-        });
+        } catch (error) {
+            console.log(error)
+        }
+        console.log(`syncronized with ${peer}`)
     }
 
     createGenesis() {
@@ -68,28 +75,23 @@ class Node {
         this.blocksCount = 0;
         this.peers = {};
         this.addresses = [];
-        this.cumulativeDifficulty = 0;
         this.currentDifficulty = process.env.difficulty || 4;
-        this.miningJobs = [];
+        this.miningJobs = {};
         //Create genesis block
-        this.blockchain.push(new Block({
-            index: 0,
-            prevBlockHash: '0',
-            previousDifficulty: 0,
-            pendingTransactions: this.pendingTransactions,
-            nonce: 0,
-            minedBy: '00000000000000000000000000000000',
-        }));
+        let genesisBlock = new Block(1, [], 0, '0'.repeat(40), null);
+        genesisBlock.setMinedData(new Date().toISOString(), 0, '0'.repeat(64));
+        this.blockchain.push(genesisBlock);
         this.id = `${new Date().toISOString()}${this.blockchain[0].blockHash}`;
+
+        this.setCumulativeDifficulty();
     }
 
     index() {
-        let blockchainData = this.getGeneralInfo();
         return {
             about: 'WasakaChain Blockchain Node',
             nodeID: this.nodeID,
             nodeUrl: address(),
-            ...blockchainData
+            ...this.getGeneralInfo()
         }
     }
 
@@ -120,7 +122,7 @@ class Node {
         }
     }
 
-    async getFullInfo() {
+    getFullInfo() {
         return {
             peers: this.peers,
             chain: {
@@ -129,7 +131,7 @@ class Node {
                 cumulativeDifficulty: this.cumulativeDifficulty,
             },
             pendingTransactions: this.pendingTransactions,
-            confirmedBalances: await this.getConfirmedBalances()
+            confirmedBalances: this.getConfirmedBalances()
         }
     }
 
@@ -142,6 +144,13 @@ class Node {
         }
     }
 
+    addBlock(block) {
+        this.blockchain.push(block);
+        this.addCumulativeDifficulty(block.difficulty);
+        console.log('New block mined!');
+        newBlock.emit('new_block');
+    }
+
     addCumulativeDifficulty(blockDifficulty) {
         this.cumulativeDifficulty += Math.pow(16, blockDifficulty)
     }
@@ -150,12 +159,6 @@ class Node {
         return [...this.pendingTransactions, ...nodeTransactions.filter((transaction) => {
             return this.pendingTransactions.find((tx) => tx.transactionDataHash === transaction.transactionDataHash) ? false : true;
         })];
-    }
-
-    notifyNewBlock() {
-        Object.values(this.peers).forEach((peer) => {
-
-        });
     }
 
     async registerNode(address) {
@@ -169,8 +172,8 @@ class Node {
 
     static verifyChain(chain) {
         // TO DO: complete method
-        for (const block in chain) {
-            if (!Block.isValid(block)) {
+        for (let i = 1; i < chain.length; i++) {
+            if (!Block.isValid(chain[i])) {
                 return false;
             }
         }
@@ -194,8 +197,8 @@ class Node {
         return [];
     }
 
-    async generateNodeId() {
-        this.nodeID = await generateNodeId();
+    generateNodeId() {
+        this.nodeID = generateNodeId();
     }
 
     getAddressesSafeBalances() {
@@ -226,6 +229,7 @@ class Node {
         // create candidate
         const candidateBlock = new Block(
             this.blockchain.length,
+            this.pendingTransactions,
             this.currentDifficulty,
             this.blockchain[this.blockchain.length - 1].blockHash,
             [
@@ -251,8 +255,7 @@ class Node {
             difficulty: this.currentDifficulty,
             expectedReward: process.env.reward || 1,
             rewardAddress: minerAddress,
-            blockDataHash: candidateBlock.blockHash,
-            candidateBlock
+            blockDataHash: candidateBlock.blockDataHash,
         };
     }
 }
