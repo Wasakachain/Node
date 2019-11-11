@@ -1,6 +1,6 @@
 const Block = require('./Block');
 const Transaction = require('./Transaction');
-const { request, generateNodeId, address, newPeerConnected } = require('../utils/functions');
+const { request, generateNodeId, address, newPeerConnected, newBlock } = require('../utils/functions');
 
 class Node {
     constructor() {
@@ -8,52 +8,63 @@ class Node {
         this.createGenesis();
 
         this.onPeeerConnected = this.onPeeerConnected.bind(this);
+        this.onNewBlock = this.onNewBlock.bind(this);
+
         newPeerConnected.addListener('connection', this.onPeeerConnected)
+        newBlock.addListener('new_block', this.onNewBlock);
     }
 
-    cumulativeDifficulty() {
-        let difficulty = 0;
+    setCumulativeDifficulty() {
+        this.cumulativeDifficulty = 0;
         this.blockchain.forEach((block) => {
-            difficulty += Math.pow(16, block.difficulty);
+            this.cumulativeDifficulty += Math.pow(16, block.difficulty);
         });
-        return difficulty;
+    }
+
+    onNewBlock() {
+        Object.keys(this.peers).forEach(peer => {
+            request(`${this.peers[peer]}/peers/notify-new-block`, 'POST', {
+                blocksCount: this.blockchain.length,
+                cumulativeDifficulty: this.cumulativeDifficulty,
+                nodeUrl: address()
+            }).catch(() => {
+                delete this.peers[peer];
+            });
+        });
     }
 
     async onPeeerConnected(peer) {
-        await this.synchronizeChain(peer);
+        await this.checkBetterChain(peer);
     }
 
-    async synchronizeChain(node) {
-        // Implement chain verification
+    shouldDownloadChain(difficulty) {
+        return difficulty > this.cumulativeDifficulty
+    }
+
+    async checkBetterChain(peer) {
+        let res = await request(`${peer}/info`);
+        if (this.shouldDownloadChain(res.data.cumulativeDifficulty)) {
+            await this.synchronizePeer(peer);
+        }
+    }
+
+    async synchronizePeer(peer) {
         try {
-            let res = await request(`${node}/info`)
-            if (res.data.cumulativeDifficulty > this.cumulativeDifficulty) {
-                res = await request(`${node}/blocks`);
-                if (!Node.verifyChain(res.data)) return;
-                let newChain = res.data;
-                let resTxs = await request(`${node}/transactions/pending`);
-                let newTransactions = this.synchronizeTransactions(resTxs.data.transactions);
-                if (newChain) {
-                    this.blockchain = newChain;
-                    this.pendingTransactions = newTransactions;
-                }
+            let res = await request(`${peer}/blocks`);
+            if (!Node.verifyChain(res.data)) return;
+            let newChain = res.data;
+            let resTxs = await request(`${peer}/transactions/pending`);
+            let newTransactions = this.synchronizeTransactions(resTxs.data.transactions);
+            if (newChain) {
+                this.blockchain = newChain;
+                this.pendingTransactions = newTransactions;
+                this.setCumulativeDifficulty()
+                newBlock.emit('new_block');
             }
         } catch (error) {
             console.log(error)
         }
-        console.log(`syncronized with ${node}`)
-    }
-
-    checkPeers() {
-        if (Object.keys(this.peers).length === 0) return;
-
-        Object.keys(this.peers).forEach(async (key) => {
-            try {
-                await request(`${this.peers[key]}/info`, 'GET')
-            } catch (error) {
-                delete this.peers[key];
-            }
-        });
+        console.log(`syncronized with ${peer}`)
     }
 
     createGenesis() {
@@ -72,7 +83,7 @@ class Node {
         this.blockchain.push(genesisBlock);
         this.id = `${new Date().toISOString()}${this.blockchain[0].blockHash}`;
 
-        this.cumulativeDifficulty = this.cumulativeDifficulty();
+        this.setCumulativeDifficulty();
     }
 
     index() {
@@ -136,6 +147,8 @@ class Node {
     addBlock(block) {
         this.blockchain.push(block);
         this.addCumulativeDifficulty(block.difficulty);
+        console.log('New block mined!');
+        newBlock.emit('new_block');
     }
 
     addCumulativeDifficulty(blockDifficulty) {
@@ -146,12 +159,6 @@ class Node {
         return [...this.pendingTransactions, ...nodeTransactions.filter((transaction) => {
             return this.pendingTransactions.find((tx) => tx.transactionDataHash === transaction.transactionDataHash) ? false : true;
         })];
-    }
-
-    notifyNewBlock() {
-        Object.values(this.peers).forEach((peer) => {
-
-        });
     }
 
     async registerNode(address) {

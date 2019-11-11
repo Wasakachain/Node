@@ -6,7 +6,7 @@ class BlockchainController {
   // node index
   static nodeIndex(_, response) {
     let nodeData = node.index();
-    return response.send({ ...nodeData, jobs: node.miningJobs });
+    return response.send(nodeData);
   }
 
   static debug(req, response) {
@@ -72,7 +72,11 @@ class BlockchainController {
   }
 
   static broadcastBlocks(req, response) {
-    return response.send({ message: 'blockchain broadcasted to all peers connected' });
+    const { cumulativeDifficulty, nodeUrl } = req.body;
+    if (node.shouldDownloadChain(cumulativeDifficulty)) {
+      node.synchronizePeer(nodeUrl);
+    }
+    return response.send({ message: 'Thank you for the notification' });
   }
 
   // transactions methods
@@ -118,8 +122,6 @@ class BlockchainController {
     // TO DO: IMPLEMENT BLOCK BROADCAST
 
     node.addBlock(block)
-
-    console.log('New block mined!');
     return response.send({ message: `Block accepted, reward paid: ${process.env.reward || 1}` });
   }
 
