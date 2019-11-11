@@ -81,7 +81,6 @@ class BlockchainController {
 
   // transactions methods
   static addressBalance(req, response) {
-    console.log(req.params.address)
     return response.send({ message: `this is the address ${req.params.address} balance` });
   }
 
@@ -102,7 +101,6 @@ class BlockchainController {
   static addBlock(req, response) {
     const { blockDataHash, dateCreated, nonce, blockHash } = req.body;
     let block = node.miningJobs[blockDataHash]
-
     if (!block) {
       return response.status(404).send({ errorMsg: 'Block not found or alreade mined' });
     }

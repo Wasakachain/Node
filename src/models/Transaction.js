@@ -23,7 +23,7 @@ class Transaction {
         this.dateCreated = new Date().toISOString();
         this.data = data;
         this.senderPubKey = senderPubKey;
-        this.transactionDataHash = Transaction.dataHash({ from, to, value, fee, dateCreated, senderPubKey });
+        this.transactionDataHash = Transaction.dataHash({ from, to, value, fee, dateCreated: this.dateCreated, senderPubKey });
         this.isCoinbase = isCoinbase;
         this.senderSignature = senderSignature;
         this.minedInBlockIndex = minedInBlockIndex;

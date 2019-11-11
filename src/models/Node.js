@@ -225,7 +225,7 @@ class Node {
         return base_reward + fees_sum;
     }
 
-    async getNewBlockInfo(minerAddress) {
+    getNewBlockInfo(minerAddress) {
         // create candidate
         const candidateBlock = new Block(
             this.blockchain.length,
@@ -237,7 +237,7 @@ class Node {
                 new Transaction(
                     '0000000000000000000000000000000000000000',
                     minerAddress,
-                    await this.calculateMinerReward(),
+                    this.calculateMinerReward(),
                     0,
                     '0000000000000000000000000000000000000000',
                     null,
@@ -249,6 +249,9 @@ class Node {
             null,
             minerAddress
         );
+
+        this.miningJobs[candidateBlock.blockDataHash] = candidateBlock;
+
         return {
             index: this.blockchain.length,
             transactionsIncluded: this.pendingTransactions.length,
