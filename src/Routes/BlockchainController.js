@@ -105,7 +105,7 @@ class BlockchainController {
 
     block.setMinedData(dateCreated, nonce, blockHash);
 
-    if (Block.isValid(block)) {
+    if (!Block.isValid(block)) {
       return response.status(400).send({ errorMsg: 'Invalid block' });
     }
 

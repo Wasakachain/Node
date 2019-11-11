@@ -13,31 +13,32 @@ class Block {
 
     setMinedData(dateCreated, nonce, blockHash) {
         this.dateCreated = dateCreated;
-        this.nonce = nonce;
+        this.nonce = parseInt(nonce, 10);
         this.blockHash = blockHash;
     }
 
-    __validProof() {
-        return '0'.repeat(this.difficulty) === this.blockHash.slice(0, this.difficulty);
+    static __validProof(block) {
+        return '0'.repeat(block.difficulty) === block.blockHash.slice(0, block.difficulty);
     }
 
-    __validHash() {
-        return sha256(JSON.stringify({ blockDataHash: this.blockDataHash, dateCreated: this.dateCreated, nonce: this.nonce })) === this.blockHash;
+    static __validHash(block) {
+        return sha256(JSON.stringify({ blockDataHash: block.blockDataHash, dateCreated: block.dateCreated, nonce: block.nonce })) == block.blockHash;
     }
-
 
     static isValid(block) {
         // TO DO: COMPLETE METHOD
-        if ((!block.index || !block.transactions || !block.difficulty || !block.prevBlockHash || !block.minedBy || !block.blockDataHash || !block.blockDataHash || !block.nonce || !block.dateCreated || !block.blockHash) || !block.__validProof() || !block.__validHash()) {
+
+        if ((!block.index || !block.difficulty || !block.prevBlockHash || !block.minedBy || !block.blockDataHash || !block.blockDataHash || !block.nonce || !block.dateCreated || !block.blockHash) || !Block.__validProof(block) || !Block.__validHash(block)) {
             return false;
         }
 
-        for (const transaction in block.transactions) {
-            if (!Transactions.isValid(transaction)) {
-                return false;
+        if (block.transactions.length > 0) {
+            for (let i = 0; i < block.transactions.length; i++) {
+                if (!Transactions.isValid(block.transactions[i])) {
+                    return false;
+                }
             }
         }
-
         return true;
     }
 }

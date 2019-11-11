@@ -29,7 +29,7 @@ class Node {
             let res = await request(`${node}/info`)
             if (res.data.cumulativeDifficulty > this.cumulativeDifficulty) {
                 res = await request(`${node}/blocks`);
-                if (!Node.verifyChain(res.blockchain)) return;
+                if (!Node.verifyChain(res.data)) return;
                 let newChain = res.data;
                 let resTxs = await request(`${node}/transactions/pending`);
                 let newTransactions = this.synchronizeTransactions(resTxs.data.transactions);
@@ -64,10 +64,12 @@ class Node {
         this.blocksCount = 0;
         this.peers = {};
         this.addresses = [];
-        this.currentDifficulty = process.env.difficulty || 5;
+        this.currentDifficulty = process.env.difficulty || 4;
         this.miningJobs = {};
         //Create genesis block
-        this.blockchain.push(new Block(1, [], 0, '0'.repeat(40), null));
+        let genesisBlock = new Block(1, [], 0, '0'.repeat(40), null);
+        genesisBlock.setMinedData(new Date().toISOString(), 0, '0'.repeat(64));
+        this.blockchain.push(genesisBlock);
         this.id = `${new Date().toISOString()}${this.blockchain[0].blockHash}`;
 
         this.cumulativeDifficulty = this.cumulativeDifficulty();
@@ -163,8 +165,8 @@ class Node {
 
     static verifyChain(chain) {
         // TO DO: complete method
-        for (const block in chain) {
-            if (!Block.isValid(block)) {
+        for (let i = 1; i < chain.length; i++) {
+            if (!Block.isValid(chain[i])) {
                 return false;
             }
         }
