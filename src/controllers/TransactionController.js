@@ -13,7 +13,7 @@ class TransactionController {
         return response.send({ transactions: node.confirmedTransactions });
     }
 
-    static send(_, response) {
+    static sendTransaction(_, response) {
         return response.send({ message: 'transaction done!' });
     }
 
