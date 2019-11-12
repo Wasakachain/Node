@@ -15,7 +15,7 @@ class Transaction {
      * @param {boolean} isCoinbase  set to true when transaction is a coinbase transaction
      * @param {string} data transaction data
      */
-    constructor(from, to, value, fee, senderPubKey, senderSignature, minedInBlockIndex, transferSuccessful = false, data) {
+    constructor(from, to, value, fee, senderPubKey, senderSignature, minedInBlockIndex, data) {
         this.from = from;
         this.to = to;
         this.value = value;
@@ -98,11 +98,11 @@ class Transaction {
             ...Object.assign({}, data ? { data: data.trim() } : {}),
             senderPubKey,
             transactionDataHash: Transaction.getTransactionDataHash({
-                to, value, fee, data: data.trim(), minedInBlockIndex, from, senderPubKey, senderSignature, dateCreated
+                to, value, fee, data: data ? data.trim() : undefined, minedInBlockIndex, from, senderPubKey, senderSignature, dateCreated
             }),
             senderSignature,
             minedInBlockIndex,
-            isCoinbase = true
+            isCoinbase: true
         }
     }
 }
