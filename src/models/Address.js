@@ -8,28 +8,32 @@ class Address {
         this.pendingBalance = new BigNumber(0);
     }
 
+    hasFunds(amount) {
+        return (this.safeBalance.plus(this.confirmedBalance)).comparedTo(amount) > 0;
+    }
+
     addSafeBalance(value) {
-        this.safeBalance.plus(value);
+        this.safeBalance = this.safeBalance.plus(value);
     }
 
     addConfirmedBalance(value) {
-        this.safeBalance.plus(value);
+        this.confirmedBalance = this.confirmedBalance.plus(value);
     }
 
     addPendingBalance(value) {
-        this.safeBalance.plus(value);
+        this.pendingBalance = this.pendingBalance.plus(value);
     }
 
     substractSafeBalance(value) {
-        this.safeBalance.minus(value);
+        this.safeBalance = this.safeBalance.minus(value);
     }
 
     substractConfirmedBalance(value) {
-        this.safeBalance.minus(value);
+        this.confirmedBalance = this.confirmedBalance.minus(value);
     }
 
     substractPendingBalance(value) {
-        this.safeBalance.minus(value);
+        this.pendingBalance = this.pendingBalance.minus(value);
     }
 
 }

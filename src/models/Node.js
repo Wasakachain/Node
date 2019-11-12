@@ -1,3 +1,5 @@
+const { BigNumber } = require('bignumber.js');
+
 const moment = require('moment');
 const Block = require('./Block');
 const Transaction = require('./Transaction');
@@ -7,20 +9,56 @@ const BLOCKS_PER_MINUTE = 1;
 
 class Node {
     constructor() {
+        // Create node ID
         this.generateNodeId();
+
+        // Iinicialize Blockchain
         this.createGenesis();
 
         this.onPeeerConnected = this.onPeeerConnected.bind(this);
         this.onNewBlock = this.onNewBlock.bind(this);
 
+        // Event listeners
         newPeerConnected.addListener('connection', this.onPeeerConnected)
         newBlock.addListener('new_block', this.onNewBlock);
     }
 
+    createGenesis() {
+        // Blockchain attributes
+        // blockchain inicialization
+        this.blockchain = [];
+        this.blocksCount = 0;
+
+        // Transactions inicialization
+        this.pendingTransactions = {};
+        this.pendingTransactionsKeys = [];
+        this.confirmedTransactions = {};
+        this.confirmedTransactionsKeys = [];
+
+        // Peers inicialization
+        this.peers = {};
+        this.miningJobs = {};
+
+        // Addresses inicialization
+        this.addresses = {};
+        this.addressesKeys = [];
+
+        // Difficulty inicialization
+        this.currentDifficulty = process.env.difficulty || 4;
+        this.setCumulativeDifficulty();
+
+        //Create genesis block
+        let genesisBlock = new Block(1, [], 0, '0'.repeat(40), null);
+        genesisBlock.setMinedData(new Date().toISOString(), 0, '0'.repeat(64));
+        this.blockchain.push(genesisBlock);
+        this.id = `${new Date().toISOString()}${this.blockchain[0].blockHash}`;
+
+    }
+
     setCumulativeDifficulty() {
-        this.cumulativeDifficulty = 0;
+        this.cumulativeDifficulty = new BigNumber(0);
         this.blockchain.forEach((block) => {
-            this.cumulativeDifficulty += Math.pow(16, block.difficulty);
+            this.cumulativeDifficulty.plus(new BigNumber(16).pow(block.difficulty));
         });
     }
 
@@ -69,26 +107,6 @@ class Node {
             console.log(error)
         }
         console.log('\x1b[43m%s\x1b[0m', `syncronized with ${peer}`)
-    }
-
-    createGenesis() {
-        // Blockchain attributes
-        this.blockchain = [];
-        this.pendingTransactions = [];
-        this.confirmedTransactions = [];
-        this.blocksCount = 0;
-        this.peers = {};
-        this.addresses = {};
-        this.addressesKeys = [];
-        this.currentDifficulty = process.env.difficulty || 4;
-        this.miningJobs = {};
-        //Create genesis block
-        let genesisBlock = new Block(1, [], 0, '0'.repeat(40), null);
-        genesisBlock.setMinedData(new Date().toISOString(), 0, '0'.repeat(64));
-        this.blockchain.push(genesisBlock);
-        this.id = `${new Date().toISOString()}${this.blockchain[0].blockHash}`;
-
-        this.setCumulativeDifficulty();
     }
 
     index() {
