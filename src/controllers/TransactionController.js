@@ -5,7 +5,6 @@ class TransactionController {
         return response.send({ message: 'this are all the transactions' });
     }
 
-
     static pendingTransactions(_, response) {
         return response.send({ transactions: node.pendingTransactions });
     }

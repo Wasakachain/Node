@@ -3,7 +3,7 @@ const { BigNumber } = require('bignumber.js');
 const moment = require('moment');
 const Block = require('./Block');
 const Transaction = require('./Transaction');
-const { request, generateNodeId, address, newPeerConnected, newBlock } = require('../utils/functions');
+const { request, generateNodeId, address, NewPeerConnected, NewBlock, NewTransaction } = require('../utils/functions');
 
 const BLOCKS_PER_MINUTE = 1;
 
@@ -19,8 +19,8 @@ class Node {
         this.onNewBlock = this.onNewBlock.bind(this);
 
         // Event listeners
-        newPeerConnected.addListener('connection', this.onPeeerConnected)
-        newBlock.addListener('new_block', this.onNewBlock);
+        NewPeerConnected.addListener('connection', this.onPeeerConnected)
+        NewBlock.addListener('new_block', this.onNewBlock);
     }
 
     createGenesis() {
@@ -62,14 +62,27 @@ class Node {
         });
     }
 
+    onNewTransaction(transaction) {
+        Object.keys(this.peers).forEach(peer => {
+            request(`${this.peers[peer]}/transaction/send`, 'POST', transaction)
+                .catch(() => {
+                    if (!error.status) {
+                        delete this.peers[peer];
+                    }
+                });
+        });
+    }
+
     onNewBlock() {
         Object.keys(this.peers).forEach(peer => {
             request(`${this.peers[peer]}/peers/notify-new-block`, 'POST', {
                 blocksCount: this.blockchain.length,
                 cumulativeDifficulty: this.cumulativeDifficulty,
                 nodeUrl: address()
-            }).catch(() => {
-                delete this.peers[peer];
+            }).catch((error) => {
+                if (!error.status) {
+                    delete this.peers[peer];
+                }
             });
         });
     }
@@ -101,7 +114,7 @@ class Node {
                 this.pendingTransactions = newTransactions;
                 this.setCumulativeDifficulty()
                 this.setDifficulty(this.blockchain[this.blockchain.length - 2], this.blockchain[this.blockchain.length - 1]);
-                newBlock.emit('new_block');
+                NewBlock.emit('new_block');
             }
         } catch (error) {
             console.log(error)
@@ -181,7 +194,7 @@ class Node {
         this.blockchain.push(block);
         this.addCumulativeDifficulty(block.difficulty);
         console.log('\x1b[46m%s\x1b[0m', 'New block mined!');
-        newBlock.emit('new_block');
+        NewBlock.emit('new_block');
     }
 
     addCumulativeDifficulty(blockDifficulty) {
