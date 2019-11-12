@@ -44,6 +44,11 @@ class Transaction {
      */
     static isValid(transaction) {
         //TO DO: COMPLETE THIS METHOD
+
+        if (transaction.fee < 10) {
+            return false;
+        }
+
         if (!isValidAddress(transaction.from) && !isValidAddress(transaction.to)) {
             return false;
         }

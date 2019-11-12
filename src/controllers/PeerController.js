@@ -1,8 +1,8 @@
 const { node } = require('../../index');
 
 class PeerController {
-    static showPeers(req, response) {
-        return response.send(node.peers);
+    static showPeers(req, res) {
+        return res.send(node.peers);
     }
 
     static async connectPeer(req, response) {
