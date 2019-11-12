@@ -123,7 +123,6 @@ class Node {
             confirmedTransactions: this.confirmedTransactions.length,
             pendingTransactions: this.pendingTransactions.length,
             peers: this.peers,
-            currentDifficulty: this.currentDifficulty
         }
     }
 

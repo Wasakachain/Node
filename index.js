@@ -5,6 +5,10 @@ const Routes = require('./src/Routes/NodeRoutes');
 const { handleNotFound } = require('./src/utils/functions');
 const PORT = process.env.port || 5555;
 
+const node = new (require('./src/models/Node'))();
+
+exports.node = node;
+
 App.use(Express.json());
 App.use(Express.urlencoded({ extended: true }));
 
