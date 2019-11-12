@@ -245,18 +245,12 @@ class Node {
         const candidateBlock = new Block(
             this.blockchain.length,
             [
-                ...this.pendingTransactions,
-                new Transaction(
-                    '0000000000000000000000000000000000000000',
-                    minerAddress,
-                    this.calculateMinerReward(),
+                Transaction.coinbaseTransaction(
+                    minerAddress, this.calculateMinerReward(),
                     0,
-                    '0000000000000000000000000000000000000000',
-                    null,
-                    '0000000000000000000000000000000000000000',
-                    this.blockchain.length,
-                    true
-                )
+                    this.blockchain.length
+                ),
+                ...this.pendingTransactions,
             ],
             this.currentDifficulty,
             minerAddress,

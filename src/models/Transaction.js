@@ -15,7 +15,7 @@ class Transaction {
      * @param {boolean} isCoinbase  set to true when transaction is a coinbase transaction
      * @param {string} data transaction data
      */
-    constructor(from, to, value, fee, senderPubKey, senderSignature, minedInBlockIndex, transferSuccessful = false, isCoinbase = false, data) {
+    constructor(from, to, value, fee, senderPubKey, senderSignature, minedInBlockIndex, transferSuccessful = false, data) {
         this.from = from;
         this.to = to;
         this.value = value;
@@ -24,7 +24,6 @@ class Transaction {
         this.data = data;
         this.senderPubKey = senderPubKey;
         this.transactionDataHash = Transaction.dataHash({ from, to, value, fee, dateCreated: this.dateCreated, senderPubKey });
-        this.isCoinbase = isCoinbase;
         this.senderSignature = senderSignature;
         this.minedInBlockIndex = minedInBlockIndex;
         this.transferSuccessful = transferSuccessful;
@@ -102,7 +101,8 @@ class Transaction {
                 to, value, fee, data: data.trim(), minedInBlockIndex, from, senderPubKey, senderSignature, dateCreated
             }),
             senderSignature,
-            minedInBlockIndex
+            minedInBlockIndex,
+            isCoinbase = true
         }
     }
 }
