@@ -78,7 +78,8 @@ class Node {
         this.confirmedTransactions = [];
         this.blocksCount = 0;
         this.peers = {};
-        this.addresses = [];
+        this.addresses = {};
+        this.addressesKeys = [];
         this.currentDifficulty = process.env.difficulty || 4;
         this.miningJobs = {};
         //Create genesis block
@@ -140,8 +141,17 @@ class Node {
     }
 
     getAddresses() {
-        if (this.addresses.length > 0) {
+        if (this.addressesKeys.length > 0) {
             return this.addresses;
+        }
+        else {
+            return false;
+        }
+    }
+
+    getAddress(address) {
+        if (this.addresses[address]) {
+            return this.addresses[address];
         }
         else {
             return false;
@@ -195,12 +205,13 @@ class Node {
     }
 
     addAddress(addressData) {
-        this.addresses.push({
+        this.addresses[addressData.address] = {
             address: addressData.address,
             safeBalance: 0,
             confirmedBalance: 0,
             pendingBalance: 0
-        });
+        };
+        this.addressesKeys.push(addressData.address);
     }
 
     getConfirmedBalances() {
