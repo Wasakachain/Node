@@ -1,6 +1,9 @@
+const moment = require('moment');
 const Block = require('./Block');
 const Transaction = require('./Transaction');
 const { request, generateNodeId, address, newPeerConnected, newBlock } = require('../utils/functions');
+
+const BLOCKS_PER_MINUTE = 1;
 
 class Node {
     constructor() {
@@ -59,6 +62,7 @@ class Node {
                 this.blockchain = newChain;
                 this.pendingTransactions = newTransactions;
                 this.setCumulativeDifficulty()
+                this.setDifficulty(this.blockchain[this.blockchain.length - 2], this.blockchain[this.blockchain.length - 1]);
                 newBlock.emit('new_block');
             }
         } catch (error) {
@@ -118,7 +122,8 @@ class Node {
             cumulativeDifficulty: this.cumulativeDifficulty,
             confirmedTransactions: this.confirmedTransactions.length,
             pendingTransactions: this.pendingTransactions.length,
-            peers: this.peers
+            peers: this.peers,
+            currentDifficulty: this.currentDifficulty
         }
     }
 
@@ -145,6 +150,7 @@ class Node {
     }
 
     addBlock(block) {
+        this.setDifficulty(this.blockchain[this.blockchain.length - 1], block);
         this.blockchain.push(block);
         this.addCumulativeDifficulty(block.difficulty);
         console.log('New block mined!');
@@ -153,6 +159,17 @@ class Node {
 
     addCumulativeDifficulty(blockDifficulty) {
         this.cumulativeDifficulty += Math.pow(16, blockDifficulty)
+    }
+
+    setDifficulty(prevBlock, newBlock) {
+        let difference = moment(newBlock.dateCreated).diff(prevBlock.dateCreated, "minutes");
+        if (difference < BLOCKS_PER_MINUTE) {
+            this.currentDifficulty += 1;
+            console.log('increased difficult')
+        } else {
+            this.cumulativeDifficulty -= 1;
+            console.log('decreased difficult')
+        }
     }
 
     synchronizeTransactions(nodeTransactions) {
@@ -229,9 +246,6 @@ class Node {
         // create candidate
         const candidateBlock = new Block(
             this.blockchain.length,
-            this.pendingTransactions,
-            this.currentDifficulty,
-            this.blockchain[this.blockchain.length - 1].blockHash,
             [
                 ...this.pendingTransactions,
                 new Transaction(
@@ -246,10 +260,10 @@ class Node {
                     true
                 )
             ],
-            null,
-            minerAddress
+            this.currentDifficulty,
+            minerAddress,
+            this.blockchain[this.blockchain.length - 1].blockHash,
         );
-
         this.miningJobs[candidateBlock.blockDataHash] = candidateBlock;
 
         return {

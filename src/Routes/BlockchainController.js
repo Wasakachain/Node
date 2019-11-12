@@ -102,7 +102,7 @@ class BlockchainController {
     const { blockDataHash, dateCreated, nonce, blockHash } = req.body;
     let block = node.miningJobs[blockDataHash]
     if (!block) {
-      return response.status(404).send({ errorMsg: 'Block not found or alreade mined' });
+      return response.status(404).send({ errorMsg: 'Block not found or already mined' });
     }
 
     block.setMinedData(dateCreated, nonce, blockHash);
@@ -118,9 +118,8 @@ class BlockchainController {
     });
 
     // TO DO: IMPLEMENT BLOCK BROADCAST
-
     node.addBlock(block)
-    return response.send({ message: `Block accepted, reward paid: ${process.env.reward || 1}` });
+    return response.send({ message: `Block accepted, reward paid: ${block.transactions[0].value}` });
   }
 
   // block methods
