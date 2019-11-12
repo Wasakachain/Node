@@ -68,7 +68,7 @@ class Node {
         } catch (error) {
             console.log(error)
         }
-        console.log(`syncronized with ${peer}`)
+        console.log('\x1b[43m%s\x1b[0m', `syncronized with ${peer}`)
     }
 
     createGenesis() {
@@ -153,7 +153,7 @@ class Node {
         this.setDifficulty(this.blockchain[this.blockchain.length - 1], block);
         this.blockchain.push(block);
         this.addCumulativeDifficulty(block.difficulty);
-        console.log('New block mined!');
+        console.log('\x1b[46m%s\x1b[0m', 'New block mined!');
         newBlock.emit('new_block');
     }
 
@@ -165,10 +165,8 @@ class Node {
         let difference = moment(newBlock.dateCreated).diff(prevBlock.dateCreated, "minutes");
         if (difference < BLOCKS_PER_MINUTE) {
             this.currentDifficulty += 1;
-            console.log('increased difficult')
         } else {
             this.cumulativeDifficulty -= 1;
-            console.log('decreased difficult')
         }
     }
 
