@@ -15,7 +15,7 @@ class Transaction {
      * @param {boolean} isCoinbase  set to true when transaction is a coinbase transaction
      * @param {string} data transaction data
      */
-    constructor(from, to, value, fee, senderPubKey, senderSignature, minedInBlockIndex, transferSuccessful = false, isCoinbase = false, data) {
+    constructor(from, to, value, fee, senderPubKey, senderSignature, minedInBlockIndex, data) {
         this.from = from;
         this.to = to;
         this.value = value;
@@ -23,8 +23,7 @@ class Transaction {
         this.dateCreated = new Date().toISOString();
         this.data = data;
         this.senderPubKey = senderPubKey;
-        this.transactionDataHash = Transaction.dataHash({ from, to, value, fee, dateCreated, senderPubKey });
-        this.isCoinbase = isCoinbase;
+        this.transactionDataHash = Transaction.dataHash({ from, to, value, fee, dateCreated: this.dateCreated, senderPubKey });
         this.senderSignature = senderSignature;
         this.minedInBlockIndex = minedInBlockIndex;
         this.transferSuccessful = transferSuccessful;
@@ -45,6 +44,11 @@ class Transaction {
      */
     static isValid(transaction) {
         //TO DO: COMPLETE THIS METHOD
+
+        if (transaction.fee < 10 && !transaction.isCoinbase) {
+            return false;
+        }
+
         if (!isValidAddress(transaction.from) && !isValidAddress(transaction.to)) {
             return false;
         }
@@ -98,11 +102,12 @@ class Transaction {
             dateCreated: dateCreated,
             ...Object.assign({}, data ? { data: data.trim() } : {}),
             senderPubKey,
-            transactionDataHash: Transaction.getTransactionDataHash({
-                to, value, fee, data: data.trim(), minedInBlockIndex, from, senderPubKey, senderSignature, dateCreated
+            transactionDataHash: Transaction.dataHash({
+                to, value, fee, data: data ? data.trim() : undefined, minedInBlockIndex, from, senderPubKey, senderSignature, dateCreated
             }),
             senderSignature,
-            minedInBlockIndex
+            minedInBlockIndex,
+            isCoinbase: true
         }
     }
 }

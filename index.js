@@ -1,9 +1,17 @@
 const Express = require('express');
 const App = Express();
 // importing routes
+const node = new (require('./src/models/Node'))();
+exports.node = node;
 const Routes = require('./src/Routes/NodeRoutes');
 const { handleNotFound } = require('./src/utils/functions');
 const PORT = process.env.port || 5555;
+
+
+
+exports.WASA = 1000000;
+exports.AVO = 1000;
+exports.GAR = 1;
 
 App.use(Express.json());
 App.use(Express.urlencoded({ extended: true }));

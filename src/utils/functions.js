@@ -8,8 +8,9 @@ const uuidv4 = require('uuid/v4');
 
 const events = require('events');
 
-exports.newPeerConnected = new events.EventEmitter();
-exports.newBlock = new events.EventEmitter();
+exports.NewPeerConnected = new events.EventEmitter();
+exports.NewBlock = new events.EventEmitter();
+exports.NewTransaction = new events.EventEmitter();
 
 function setHeaders(data) {
     let header = {
@@ -59,7 +60,7 @@ exports.request = (url, method, data) => {
 
         req.end();
     })
-};
+}
 
 exports.isValidAddress = function (address) {
     const unprefixedAddress = address.replace(/^0x/, '');

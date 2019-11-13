@@ -5,7 +5,7 @@ class Block {
     constructor(index, transactions, difficulty, minedBy, prevBlockHash) {
         this.index = index;
         this.transactions = transactions;
-        this.difficulty = difficulty;
+        this.difficulty = typeof difficulty === 'string' ? parseInt(difficulty, 10) : difficulty;
         this.minedBy = minedBy;
         this.prevBlockHash = prevBlockHash;
         this.blockDataHash = sha256(JSON.stringify({ index, transactions, difficulty, prevBlockHash, minedBy }));
@@ -27,18 +27,17 @@ class Block {
 
     static isValid(block) {
         // TO DO: COMPLETE METHOD
-
         if ((!block.index || !block.difficulty || !block.prevBlockHash || !block.minedBy || !block.blockDataHash || !block.blockDataHash || !block.nonce || !block.dateCreated || !block.blockHash) || !Block.__validProof(block) || !Block.__validHash(block)) {
             return false;
         }
 
-        if (block.transactions.length > 0) {
-            for (let i = 0; i < block.transactions.length; i++) {
-                if (!Transactions.isValid(block.transactions[i])) {
-                    return false;
-                }
-            }
-        }
+        // if (block.transactions.length > 0) {
+        //     for (let i = 0; i < block.transactions.length; i++) {
+        //         if (!Transactions.isValid(block.transactions[i])) {
+        //             return false;
+        //         }
+        //     }
+        // }
         return true;
     }
 }
