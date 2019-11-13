@@ -15,6 +15,9 @@ class Node {
         // Iinicialize Blockchain
         this.createGenesis();
 
+        // Peers inicialization
+        this.peers = {};
+
         this.onPeeerConnected = this.onPeeerConnected.bind(this);
         this.onNewBlock = this.onNewBlock.bind(this);
 
@@ -35,8 +38,6 @@ class Node {
         this.confirmedTransactions = {};
         this.confirmedTransactionsKeys = [];
 
-        // Peers inicialization
-        this.peers = {};
         this.miningJobs = {};
 
         // Addresses inicialization
@@ -131,9 +132,9 @@ class Node {
         }
     }
 
-    async debugInfo() {
+    debugInfo() {
         let nodeInfo = this.getNodeInfo();
-        let blockchainFullInfo = await this.getFullInfo();
+        let blockchainFullInfo = this.getFullInfo();
         return {
             ...nodeInfo,
             ...blockchainFullInfo
@@ -273,13 +274,13 @@ class Node {
     calculateMinerReward() {
         let base_reward = 5000000;
         let fees_sum = 0;
-        this.pendingTransactions.forEach(transaction => {
+        this.pendingTransactionsKeys.forEach(transaction => {
             fees_sum += parseInt(transaction.fee);
         });
         return base_reward + fees_sum;
     }
 
-    getNewBlockInfo(minerAddress) {
+    newMiningJob(minerAddress, difficulty) {
         // create candidate
         const candidateBlock = new Block(
             this.blockchain.length,
@@ -289,9 +290,9 @@ class Node {
                     0,
                     this.blockchain.length
                 ),
-                ...this.pendingTransactions,
+                ...Object.values(this.pendingTransactions),
             ],
-            this.currentDifficulty,
+            difficulty || this.currentDifficulty,
             minerAddress,
             this.blockchain[this.blockchain.length - 1].blockHash,
         );

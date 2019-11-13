@@ -102,7 +102,7 @@ class Transaction {
             dateCreated: dateCreated,
             ...Object.assign({}, data ? { data: data.trim() } : {}),
             senderPubKey,
-            transactionDataHash: Transaction.getTransactionDataHash({
+            transactionDataHash: Transaction.dataHash({
                 to, value, fee, data: data ? data.trim() : undefined, minedInBlockIndex, from, senderPubKey, senderSignature, dateCreated
             }),
             senderSignature,

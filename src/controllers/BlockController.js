@@ -1,5 +1,4 @@
 const { node } = require('../../index');
-
 class BlockController {
     static receiveBlock(req, response) {
         const { blockDataHash, dateCreated, nonce, blockHash } = req.body;
@@ -26,7 +25,7 @@ class BlockController {
 
     static createMiningJob(request, response) {
         const { minerAddress } = request.params;
-        return response.send(node.getNewBlockInfo(minerAddress));
+        return response.send(node.newMiningJob(minerAddress));
     }
 
     static blockByIndex(request, response) {

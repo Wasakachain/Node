@@ -10,7 +10,7 @@ Router.get('/info', NodeController.nodeIndex); //done
 // debugging routes
 Router.get('/debug', NodeController.debug); // done
 Router.get('/debug/reset-chain', NodeController.resetChain); //done
-Router.post('/debug/mine/:minerAddress/:difficulty', NodeController.getMinerDifficulty);
+Router.get('/debug/mine/:minerAddress/:difficulty', NodeController.debugMine);
 // balances routes
 Router.get('/balances', AddressController.balances); //done
 Router.get('/address/:address/balance', AddressController.addressBalance);
