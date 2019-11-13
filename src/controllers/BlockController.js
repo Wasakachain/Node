@@ -1,4 +1,5 @@
 const { node } = require('../../index');
+const Block = require('../models/Block');
 class BlockController {
     static receiveBlock(req, response) {
         const { blockDataHash, dateCreated, nonce, blockHash } = req.body;
@@ -8,15 +9,18 @@ class BlockController {
         }
 
         block.setMinedData(dateCreated, nonce, blockHash);
-
         if (!Block.isValid(block)) {
             return response.status(400).send({ errorMsg: 'Invalid block' });
         }
 
         node.miningJobs = {};
 
-        node.pendingTransactions = block.transactions.filter((transaction) => {
-            return !(node.pendingTransactions.find((tx) => tx.transactionDataHash === transaction.transactionDataHash));
+        block.transactions.forEach((transaction) => {
+            const index = node.pendingTransactionsKeys.findIndex((tx) => tx === transaction.transactionDataHash);
+            if (index === 1) {
+                delete node.pendingTransactionsKeys[index]
+                delete node.pendingTransactions[transaction.transactionDataHash];
+            }
         });
 
         node.addBlock(block)

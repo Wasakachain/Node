@@ -27,7 +27,6 @@ class Block {
 
     static isValid(block) {
         // TO DO: COMPLETE METHOD
-
         if ((!block.index || !block.difficulty || !block.prevBlockHash || !block.minedBy || !block.blockDataHash || !block.blockDataHash || !block.nonce || !block.dateCreated || !block.blockHash) || !Block.__validProof(block) || !Block.__validHash(block)) {
             return false;
         }
