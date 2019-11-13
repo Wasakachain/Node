@@ -1,16 +1,23 @@
 const { node } = require('../../index');
+const { paginateTransactions } = require('../utils/functions');
 
 class TransactionController {
     static transactionIndex(_, res) {
         return res.send({ message: 'this are all the transactions' });
     }
 
-    static pendingTransactions(_, res) {
-        return res.send({ transactions: node.pendingTransactions });
+    static pendingTransactions(req, response) {
+        const { current_page, paginate } = req.query;
+        return response.send(
+            paginateTransactions(node.pendingTransactions, { current_page, paginate })
+        );
     }
 
-    static confirmedTransactions(_, res) {
-        return res.send({ transactions: node.confirmedTransactions });
+    static confirmedTransactions(req, response) {
+        const { current_page, paginate } = req.query;
+        return response.send(
+            paginateTransactions(node.confirmedTransactions, { current_page, paginate })
+        );
     }
 
     static sendTransaction(_, res) {

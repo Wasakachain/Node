@@ -1,5 +1,7 @@
 const { node } = require('../../index');
 const Block = require('../models/Block');
+const { paginateBlocks } = require('../utils/functions');
+
 class BlockController {
     static receiveBlock(req, response) {
         const { blockDataHash, dateCreated, nonce, blockHash } = req.body;
@@ -44,9 +46,11 @@ class BlockController {
         });
     }
 
-
     static blockIndex(req, response) {
-        return response.send(node.blockchain);
+        const { current_page, paginate } = req.query;
+        return response.send(
+            paginateBlocks(node.blockchain, { current_page, paginate })
+        );
     }
 }
 
