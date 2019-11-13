@@ -86,3 +86,66 @@ exports.handleNotFound = (_, res) => {
             },
         });
 }
+
+exports.paginateBlocks = (blocks, paginationObj) => {
+    let { current_page, paginate } = paginationObj;
+    // if its a node request, just simply returns all the blocks
+    if (!paginate && !current_page) {
+        return blocks;
+    }
+    // set the variables
+    if (!paginate) {
+        paginate = 20;
+    }
+    if (!current_page) {
+        current_page = 1
+    }
+    let firstBlockIndex = current_page - 1;
+    let lastBlockIndex = paginate * current_page - 1;
+    let lastPage = Math.round(blocks.length / paginate);
+    let blocksToSend = blocks.map((block, index) => {
+        if (index >= firstBlockIndex && index <= lastBlockIndex) {
+            return block;
+        }
+    });
+    return {
+        blocks: blocksToSend,
+        currentPage: current_page,
+        nextPage: current_page < lastPage ? current_page + 1 : null,
+        lastPage: lastPage !== 0 ? lastPage : 1,
+        blocksPerPage: paginate
+    };
+}
+
+exports.paginateTransactions = (transactions, paginationObj) => {
+    let { current_page, paginate } = paginationObj;
+    // if its a node request, just simply returns all the transactions
+    if (!paginate && !current_page) {
+        return {transactions};
+    }
+    // set the variables
+    if (!paginate) {
+        paginate = 20;
+    }
+    if (!current_page) {
+        current_page = 1
+    }
+    let firstTransactionIndex = current_page - 1;
+    let lastTransactionIndex = paginate * current_page - 1;
+    let lastPage = Math.round(transactions.length / paginate);
+    let transactionsToSend = {};
+    if (transactions.length > 0) {
+        transactionsToSend = transactions.map((transaction, index) => {
+            if (index >= firstTransactionIndex && index <= lastTransactionIndex) {
+                return transaction;
+            }
+        });
+    }
+    return {
+        transactions: transactionsToSend,
+        currentPage: current_page,
+        nextPage: current_page < lastPage ? current_page + 1 : null,
+        lastPage: lastPage !== 0 ? lastPage : 1,
+        transactionsPerPage: paginate
+    };
+}
