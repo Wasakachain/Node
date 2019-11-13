@@ -8,7 +8,13 @@ class Address {
         this.pendingBalance = new BigNumber(0);
     }
 
-    static checkBalances(addresses, tx, blockIndex, blockchainLength) {
+    /**
+     * 
+     * @param {Array} addresses addresses object of the node
+     * @param {Transaction} tx transaction to examine
+     * @param {number} blockchainLength blockchain length
+     */
+    static checkBalances(addresses, tx, blockchainLength) {
         if (!addresses[tx.to]) {
             addresses[tx.to] = new Address(tx.to)
         }
@@ -17,26 +23,24 @@ class Address {
             addresses[tx.from] = new Address(tx.from)
         }
 
-        // if ((blockchainLength - blockIndex) > 6) {
-        // addresses[tx.to].safeBalance = addresses[tx.to].safeBalance.plus(tx.value);
-        // } else {
-        addresses[tx.to].confirmedBalance = addresses[tx.to].confirmedBalance.plus(tx.value);
-        // }
+        if ((blockchainLength - tx.minedInBlockIndex) > 6) {
+            addresses[tx.to].safeBalance = addresses[tx.to].safeBalance.plus(tx.value);
+        } else {
+            addresses[tx.to].confirmedBalance = addresses[tx.to].confirmedBalance.plus(tx.value);
+        }
 
         const amount = new BigNumber(tx.value + tx.fee);
+        if (addresses[tx.from].safeBalance.comparedTo(amount) < 0) {
 
-        // if (addresses[tx.from].safeBalance.comparedTo(amount) < 0) {
+            addresses[tx.from].confirmedBalance =
+                addresses[tx.from].confirmedBalance.minus(
+                    amount.minus(addresses[tx.from].safeBalance)
+                );
+            addresses[tx.from].safeBalance = new BigNumber(0);
+        } else {
+            addresses[tx.from].safeBalance = addresses[tx.from].safeBalance.minus(amount);
+        }
 
-        //     addresses[tx.from].confirmedBalance =
-        //         addresses[tx.from].confirmedBalance.minus(
-        //             amount.minus(addresses[tx.from].safeBalance)
-        //         );
-
-        //     addresses[tx.from].safeBalance = new BigNumber(0);
-
-        // }
-
-        addresses[tx.from].confirmedBalance = addresses[tx.from].confirmedBalance.minus(amount);
     }
 
     hasFunds(amount) {
