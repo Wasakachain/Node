@@ -1,7 +1,8 @@
 const { node } = require('../../index');
+const { request, NewPeerConnected, address } = require('../utils/functions');
 
 class PeerController {
-    static showPeers(req, res) {
+    static showPeers(_, res) {
         return res.send(node.peers);
     }
 
@@ -18,16 +19,15 @@ class PeerController {
 
             node.peers[res.data.nodeID] = peerUrl;
             await request(`${peerUrl}/peers/connect`, 'POST', { peerUrl: address() })
-
             console.log('\x1b[46m%s\x1b[0m', `Connected to peer ${peerUrl}`);
-            newPeerConnected.emit('connection', peerUrl);
+            NewPeerConnected.emit('connection', peerUrl);
 
             return response.send({ message: `Connected to peer: ${peerUrl}` });
 
         } catch (error) {
             if (error.status === 409) {
                 console.log('\x1b[46m%s\x1b[0m', `Connected to peer ${peerUrl}`);
-                newPeerConnected.emit('connection', peerUrl);
+                NewPeerConnected.emit('connection', peerUrl);
 
                 return response.send({ message: `Connected to peer: ${peerUrl}` })
             }

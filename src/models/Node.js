@@ -153,7 +153,7 @@ class Node {
             chainID: this.id,
             blocksCount: this.blocksCount,
             cumulativeDifficulty: this.cumulativeDifficulty,
-            confirmedTransactions: this.confirmedTransactionsKey.length,
+            confirmedTransactions: this.confirmedTransactionsKeys.length,
             pendingTransactions: this.pendingTransactionsKeys.length,
             peers: this.peers,
         }
