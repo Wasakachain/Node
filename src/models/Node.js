@@ -21,17 +21,18 @@ class Node {
 
         this.onPeeerConnected = this.onPeeerConnected.bind(this);
         this.onNewBlock = this.onNewBlock.bind(this);
+        this.onNewTransaction = this.onNewTransaction.bind(this);
 
         // Event listeners
         NewPeerConnected.addListener('connection', this.onPeeerConnected)
         NewBlock.addListener('new_block', this.onNewBlock);
+        NewTransaction.addListener('transaction', this.onNewTransaction);
     }
 
     createGenesis() {
         // Blockchain attributes
         // blockchain inicialization
         this.blockchain = [];
-        this.blocksCount = 0;
 
         // Transactions inicialization
         this.pendingTransactions = {};
@@ -79,7 +80,6 @@ class Node {
     onNewBlock() {
         Object.keys(this.peers).forEach(peer => {
             request(`${this.peers[peer]}/peers/notify-new-block`, 'POST', {
-                blocksCount: this.blockchain.length,
                 cumulativeDifficulty: this.cumulativeDifficulty,
                 nodeUrl: address()
             }).catch((error) => {
@@ -237,8 +237,6 @@ class Node {
      *  
      */
 
-
-
     index() {
         return {
             about: 'WasakaChain Blockchain Node',
@@ -267,7 +265,6 @@ class Node {
     getGeneralInfo() {
         return {
             chainID: this.id,
-            blocksCount: this.blocksCount,
             cumulativeDifficulty: this.cumulativeDifficulty,
             confirmedTransactions: this.confirmedTransactionsKeys.length,
             pendingTransactions: this.pendingTransactionsKeys.length,
