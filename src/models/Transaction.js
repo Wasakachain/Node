@@ -1,5 +1,7 @@
 const { sha256, verifySignature } = require('../utils/hash');
 const { isValidAddress } = require('../utils/functions');
+const { node } = require('../../index');
+const BigNumber = require('bignumber.js');
 
 class Transaction {
     /**
@@ -8,6 +10,7 @@ class Transaction {
      * @param {stirng} to transaction receiver address
      * @param {number} value transaction amount
      * @param {number} fee transaction fee
+     * @param {string} dateCreated trasaction creation date
      * @param {string} senderPubKey sender public key
      * @param {Array} senderSignature sender signature
      * @param {number} minedInBlockIndex index of the block where the transaction will be placed
@@ -15,19 +18,18 @@ class Transaction {
      * @param {boolean} isCoinbase  set to true when transaction is a coinbase transaction
      * @param {string} data transaction data
      */
-    constructor(from, to, value, fee, senderPubKey, senderSignature, minedInBlockIndex, data) {
+    constructor(from, to, value, fee, dateCreated, senderPubKey, senderSignature, minedInBlockIndex, data) {
         this.from = from;
         this.to = to;
         this.value = value;
         this.fee = fee;
-        this.dateCreated = new Date().toISOString();
+        this.dateCreated = isNaN(Date.parse(dateCreated)) ? new Date().toISOString() : dateCreated;
         this.data = data;
         this.senderPubKey = senderPubKey;
         this.transactionDataHash = Transaction.dataHash({ from, to, value, fee, dateCreated: this.dateCreated, senderPubKey });
         this.senderSignature = senderSignature;
         this.minedInBlockIndex = minedInBlockIndex;
         this.transferSuccessful = transferSuccessful;
-
     }
 
     /**
@@ -59,6 +61,46 @@ class Transaction {
 
         return true;
 
+    }
+
+    /**
+     * returns true when the given transaction is a valid pending transaction
+     * @param {Transaction} transaction transaction to check
+     */
+    static isValidPendingTx(pendingTx) {
+        if (!isValidAddress(pendingTx.to)) {
+            return 'Invalid "to" address.';
+        }
+        if (!isValidAddress(pendingTx.from)) {
+            return 'Invalid "from" address.';
+        }
+        if (Transaction.dataHash(pendingTx) !== pendingTx.transactionDataHash) {
+            return 'Invalid transaction hash.';
+        }
+        if(!Array.isArray(pendingTx.senderSignature) || pendingTx.senderSignature.length !== 2) {
+            return 'Invalid transaction signature.'
+        }
+        if(!pendingTx.verify()) {
+            return 'Transaction signature verification failed.'
+        }
+        if(isNaN(Date.parse(pendingTx.dateCreated)) || Date.parse(node.blockchain[0].dateCreated) >= Date.parse(pendingTx.dateCreated) || (Date.now() < Date.parse(pendingTx.dateCreated))) {
+            return 'Invalid creation date.';
+        }
+        if(!node.getAddress(pendingTx.from)) {
+            return 'The sender address doesn\'t the funds.';
+        }
+        if(typeof pendingTx.value !== "string") {
+            return 'The transaction\'s value must be a string.';
+        }
+        const value = new BigNumber(pendingTx.value);
+        const fee = new BigNumber(pendingTx.fee);
+        if(value.isNaN() || fee.isNaN() || !value.isInteger() || !fee.isInteger()) {
+            return 'The transaction\'s value and fee must be valid integer numbers.';
+        }
+        if(!node.getAddress(pendingTx.from).hasFunds(value.plus(fee))) {
+            return 'The sender address doesn\'t the funds.';
+        }
+        return true;
     }
 
     /**
