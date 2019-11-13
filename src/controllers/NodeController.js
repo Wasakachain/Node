@@ -9,7 +9,7 @@ class NodeController {
     }
 
     static debug(req, response) {
-        return node.debugInfo();
+        return response.send(node.debugInfo());
     }
 
     static resetChain(req, response) {
@@ -20,7 +20,7 @@ class NodeController {
     static async debugMine(req, response) {
         const { minerAddress, difficulty } = req.params;
         let block = new CandidateBlock(node.newMiningJob(minerAddress, difficulty));
-        const minedBlock = block.mine();
+        const minedBlock = await block.mine();
         block = node.miningJobs[minedBlock.blockDataHash]
         block.setMinedData(minedBlock.dateCreated, minedBlock.nonce, minedBlock.blockHash);
         node.setDifficulty(node.blockchain[node.blockchain.length - 1], block);

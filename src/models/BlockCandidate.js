@@ -8,7 +8,7 @@ class BlockCandidate {
     constructor({ index, transactionsIncluded, difficulty, expectedReward, rewardAddress, blockDataHash }) {
         this.index = index;
         this.transactionsIncluded = transactionsIncluded;
-        this.difficulty = difficulty;
+        this.difficulty = typeof difficulty === 'string' ? parseInt(difficulty, 10) : difficulty;
         this.expectedReward = expectedReward;
         this.rewardAddress = rewardAddress;
         this.blockDataHash = blockDataHash;
@@ -37,16 +37,18 @@ class BlockCandidate {
      * Mine the block
      */
     mine() {
-        this.nonce = 0;
-        while (!this.validProof()) {
-            this.nonce++;
-        }
-        return {
-            blockDataHash: this.blockDataHash,
-            dateCreated: this.dateCreated,
-            nonce: this.nonce,
-            blockHash: this.hash(),
-        };
+        return new Promise(resolve => {
+            this.nonce = 0;
+            while (!this.validProof()) {
+                this.nonce++;
+            }
+            resolve({
+                blockDataHash: this.blockDataHash,
+                dateCreated: this.dateCreated,
+                nonce: this.nonce,
+                blockHash: this.hash(),
+            });
+        })
     }
 
 }

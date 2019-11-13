@@ -8,6 +8,27 @@ class Address {
         this.pendingBalance = new BigNumber(0);
     }
 
+    static checkBalances(blockchain) {
+        let balances = {};
+        blockchain.forEach((block) => {
+            block.transactions.forEach((tx) => {
+                if (!balances[tx.from]) {
+                    balances[tx.from] = new Address(tx.from);
+                }
+                if (!balances[tx.to]) {
+                    balances[tx.to] = new Address(tx.to);
+                }
+                balances[tx.from].substractSafeBalance(tx.value + tx.fee)
+                balances[tx.to].addSafeBalance(tx.value + tx.fee)
+            });
+        });
+
+        return {
+            balances,
+            balancesKeys: Object.keys(balances),
+        };
+    }
+
     hasFunds(amount) {
         return (this.safeBalance.plus(this.confirmedBalance)).comparedTo(amount) > 0;
     }
@@ -38,4 +59,4 @@ class Address {
 
 }
 
-export default Address;
+module.exports = Address;

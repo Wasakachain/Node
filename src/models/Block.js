@@ -5,7 +5,7 @@ class Block {
     constructor(index, transactions, difficulty, minedBy, prevBlockHash) {
         this.index = index;
         this.transactions = transactions;
-        this.difficulty = difficulty;
+        this.difficulty = typeof difficulty === 'string' ? parseInt(difficulty, 10) : difficulty;
         this.minedBy = minedBy;
         this.prevBlockHash = prevBlockHash;
         this.blockDataHash = sha256(JSON.stringify({ index, transactions, difficulty, prevBlockHash, minedBy }));

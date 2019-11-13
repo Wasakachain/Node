@@ -4,6 +4,7 @@ const moment = require('moment');
 const Block = require('./Block');
 const Transaction = require('./Transaction');
 const { request, generateNodeId, address, NewPeerConnected, NewBlock, NewTransaction } = require('../utils/functions');
+const Address = require('../models/Address');
 
 const BLOCKS_PER_MINUTE = 1;
 
@@ -115,6 +116,9 @@ class Node {
                 this.pendingTransactions = newTransactions;
                 this.setCumulativeDifficulty()
                 this.setDifficulty(this.blockchain[this.blockchain.length - 2], this.blockchain[this.blockchain.length - 1]);
+                const { balances, balancesKeys } = Address.checkBalances(newChain);
+                this.addresses = balances;
+                this.addressesKeys = balancesKeys;
                 NewBlock.emit('new_block');
             }
         } catch (error) {
@@ -162,6 +166,7 @@ class Node {
     getFullInfo() {
         return {
             peers: this.peers,
+            balances: this.addresses,
             chain: {
                 chainID: this.id,
                 blocks: this.blockchain,
@@ -196,6 +201,9 @@ class Node {
         this.addCumulativeDifficulty(block.difficulty);
         console.log('\x1b[46m%s\x1b[0m', 'New block mined!');
         NewBlock.emit('new_block');
+        const { balances, balancesKeys } = Address.checkBalances(this.blockchain);
+        this.addresses = balances;
+        this.addressesKeys = balancesKeys;
     }
 
     addCumulativeDifficulty(blockDifficulty) {
@@ -247,11 +255,10 @@ class Node {
     }
 
     getConfirmedBalances() {
-        let addresses = this.getAddresses();
-        if (addresses) {
-            return addresses.filter(({ confirmedBalance }) => confirmedBalance !== 0);
-        }
-        return [];
+        // if (addresses) {
+        //     return addresses.filter(({ confirmedBalance }) => confirmedBalance !== 0 || );
+        // }
+        return this.addresses;
     }
 
     generateNodeId() {
