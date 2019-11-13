@@ -31,13 +31,13 @@ class Block {
             return false;
         }
 
-        if (block.transactions.length > 0) {
-            for (let i = 0; i < block.transactions.length; i++) {
-                if (!Transactions.isValid(block.transactions[i])) {
-                    return false;
-                }
-            }
-        }
+        // if (block.transactions.length > 0) {
+        //     for (let i = 0; i < block.transactions.length; i++) {
+        //         if (!Transactions.isValid(block.transactions[i])) {
+        //             return false;
+        //         }
+        //     }
+        // }
         return true;
     }
 }

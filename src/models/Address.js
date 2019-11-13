@@ -10,8 +10,8 @@ class Address {
 
     static checkBalances(blockchain) {
         let balances = {};
-        blockchain.forEach((block) => {
-            block.transactions.forEach((tx) => {
+        blockchain.forEach(({ transactions }) => {
+            transactions.forEach((tx) => {
                 if (!balances[tx.from]) {
                     balances[tx.from] = new Address(tx.from);
                 }

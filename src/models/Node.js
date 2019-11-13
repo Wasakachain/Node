@@ -107,25 +107,44 @@ class Node {
     async synchronizePeer(peer) {
         try {
             let res = await request(`${peer}/blocks`);
-            if (!Node.verifyChain(res.data)) return;
-            let newChain = res.data;
+            if (!this.validateNewChain(res.data)) return;
             let resTxs = await request(`${peer}/transactions/pending`);
-            let newTransactions = this.synchronizeTransactions(resTxs.data.transactions);
-            if (newChain) {
-                this.blockchain = newChain;
-                this.pendingTransactions = newTransactions;
-                this.setCumulativeDifficulty()
-                this.setDifficulty(this.blockchain[this.blockchain.length - 2], this.blockchain[this.blockchain.length - 1]);
-                const { balances, balancesKeys } = Address.checkBalances(newChain);
-                this.addresses = balances;
-                this.addressesKeys = balancesKeys;
-                NewBlock.emit('new_block');
-            }
+            this.synchronizeTransactions(resTxs.data.transactions);
+            NewBlock.emit('new_block');
         } catch (error) {
             console.log(error)
         }
         console.log('\x1b[43m%s\x1b[0m', `syncronized with ${peer}`)
     }
+
+    validateNewChain(chain) {
+        let newBalances = {};
+        for (let i = 1; i < chain.length; i++) {
+            if (!Block.isValid(chain[i])) {
+                return false;
+            }
+            for (let j = 0; j < chain[i].transactions.length; j++) {
+                if (!Transaction.isValid(chain[i].transactions[j])) return false;
+                if (!newBalances[chain[i].transactions[j].from]) {
+                    newBalances[chain[i].transactions[j].from] =
+                        new Address(chain[i].transactions[j].from);
+                }
+                if (!newBalances[chain[i].transactions[j].to]) {
+                    newBalances[chain[i].transactions[j].to] =
+                        new Address(chain[i].transactions[j].to);
+                }
+                newBalances[chain[i].transactions[j].from]
+                    .substractSafeBalance(chain[i].transactions[j].value + chain[i].transactions[j].fee)
+
+                newBalances[chain[i].transactions[j].to].
+                    addSafeBalance(chain[i].transactions[j].value + chain[i].transactions[j].fee)
+            }
+        }
+        this.addresses = newBalances;
+        this.blockchain = chain;
+        return true;
+    }
+
 
     index() {
         return {
@@ -195,9 +214,28 @@ class Node {
         }
     }
 
+    newBlockBalances(block) {
+        block.transactions.forEach((tx) => {
+            if (!this.addresses[tx.from]) {
+                this.addresses[tx.from] =
+                    new Address(tx.from);
+            }
+            if (!this.addresses[tx.to]) {
+                this.addresses[tx.to] =
+                    new Address(tx.value);
+            }
+            this.addresses[tx.from]
+                .substractSafeBalance(tx.value + tx.fee)
+
+            this.addresses[tx.to].
+                addSafeBalance(tx.value + tx.fee)
+        });
+    }
+
     addBlock(block) {
         this.setDifficulty(this.blockchain[this.blockchain.length - 1], block);
         this.blockchain.push(block);
+        this.newBlockBalances(block);
         this.addCumulativeDifficulty(block.difficulty);
         console.log('\x1b[46m%s\x1b[0m', 'New block mined!');
         NewBlock.emit('new_block');
@@ -220,9 +258,11 @@ class Node {
     }
 
     synchronizeTransactions(nodeTransactions) {
-        return [...this.pendingTransactions, ...nodeTransactions.filter((transaction) => {
-            return this.pendingTransactions.find((tx) => tx.transactionDataHash === transaction.transactionDataHash) ? false : true;
+        this.pendingTransactions = [...Object.values(this.pendingTransactions), ...Object.values(nodeTransactions).filter((transaction) => {
+            return !this.pendingTransactions[transaction.transactionDataHash];
         })];
+
+        this.pendingTransactionsKeys = Object.keys(this.pendingTransactionsKeys);
     }
 
     async registerNode(address) {
@@ -232,16 +272,6 @@ class Node {
                 this.peers.push(address);
             }
         } catch (error) { }
-    }
-
-    static verifyChain(chain) {
-        // TO DO: complete method
-        for (let i = 1; i < chain.length; i++) {
-            if (!Block.isValid(chain[i])) {
-                return false;
-            }
-        }
-        return true;
     }
 
     addAddress(addressData) {
