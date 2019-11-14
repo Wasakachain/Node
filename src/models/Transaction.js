@@ -35,6 +35,14 @@ class Transaction {
      * returns true when the transaction has a valid signature
      * @returns {boolean}
      */
+    static verifyTransaction(transaction) {
+        return verifySignature(transaction.transactionDataHash, transaction.senderPubKey, transaction.senderSignature);
+    }
+
+    /**
+     * returns true when the transaction has a valid signature
+     * @returns {boolean}
+     */
     verify() {
         return verifySignature(this.transactionDataHash, this.senderPubKey, this.senderSignature);
     }
