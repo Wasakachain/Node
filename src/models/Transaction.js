@@ -15,7 +15,6 @@ class Transaction {
      * @param {Array} senderSignature sender signature
      * @param {number} minedInBlockIndex index of the block where the transaction will be placed
      * @param {boolean} transferSuccessful  
-     * @param {boolean} isCoinbase  set to true when transaction is a coinbase transaction
      * @param {string} data transaction data
      */
     constructor(from, to, value, fee, dateCreated, senderPubKey, senderSignature, minedInBlockIndex, data) {
@@ -67,7 +66,7 @@ class Transaction {
      * returns true when the given transaction is a valid pending transaction
      * @param {Transaction} transaction transaction to check
      */
-    static isValidPendingTx(pendingTx) {
+    static isInvalidPendingTx(pendingTx) {
         if (!isValidAddress(pendingTx.to)) {
             return 'Invalid "to" address.';
         }
@@ -100,7 +99,7 @@ class Transaction {
         if(!node.getAddress(pendingTx.from).hasFunds(value.plus(fee))) {
             return 'The sender address doesn\'t the funds.';
         }
-        return true;
+        return false;
     }
 
     /**

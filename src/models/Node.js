@@ -16,7 +16,7 @@ class Node {
         // Iinicialize Blockchain
         this.createGenesis();
 
-        // Peers inicialization
+        // Peers initialization
         this.peers = {};
 
         this.onPeeerConnected = this.onPeeerConnected.bind(this);
@@ -29,11 +29,11 @@ class Node {
 
     createGenesis() {
         // Blockchain attributes
-        // blockchain inicialization
+        // blockchain initialization
         this.blockchain = [];
         this.blocksCount = 0;
 
-        // Transactions inicialization
+        // Transactions initialization
         this.pendingTransactions = {};
         this.pendingTransactionsKeys = [];
         this.confirmedTransactions = {};
@@ -41,11 +41,11 @@ class Node {
 
         this.miningJobs = {};
 
-        // Addresses inicialization
+        // Addresses initialization
         this.addresses = {};
         this.addressesKeys = [];
 
-        // Difficulty inicialization
+        // Difficulty initialization
         this.currentDifficulty = process.env.difficulty || 4;
         this.setCumulativeDifficulty();
 
