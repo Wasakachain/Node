@@ -1,8 +1,6 @@
 const { sha256, verifySignature } = require('../utils/hash');
 const { isValidAddress } = require('../utils/functions');
-const { node } = require('../../index');
 const BigNumber = require('bignumber.js');
-
 class Transaction {
     /**
      * Transaction representation class
@@ -17,7 +15,7 @@ class Transaction {
      * @param {boolean} transferSuccessful  
      * @param {string} data transaction data
      */
-    constructor(from, to, value, fee, dateCreated, senderPubKey, senderSignature, minedInBlockIndex, data) {
+    constructor(from, to, value, fee, dateCreated, senderPubKey, senderSignature, minedInBlockIndex, data, transferSuccessful = true) {
         this.from = from;
         this.to = to;
         this.value = value;
@@ -74,7 +72,7 @@ class Transaction {
      * returns true when the given transaction is a valid pending transaction
      * @param {Transaction} transaction transaction to check
      */
-    static isInvalidPendingTx(pendingTx) {
+    static isInvalidPendingTx(pendingTx, node) {
         if (!isValidAddress(pendingTx.to)) {
             return 'Invalid "to" address.';
         }
@@ -90,7 +88,11 @@ class Transaction {
         if (!Transaction.verifyTransaction(pendingTx)) {
             return 'Transaction signature verification failed.'
         }
-        if (isNaN(Date.parse(pendingTx.dateCreated)) || Date.parse(node.blockchain[0].dateCreated) >= Date.parse(pendingTx.dateCreated) || (Date.now() < Date.parse(pendingTx.dateCreated))) {
+        console.log('1 ', Date.parse(pendingTx.dateCreated) - Date.now());
+        console.log('2 ', Date.now());
+        console.log('4 ', Date.now() > Date.parse(pendingTx.dateCreated));
+
+        if (isNaN(Date.parse(pendingTx.dateCreated)) || Date.parse(node.blockchain[0].dateCreated) >= Date.parse(pendingTx.dateCreated) || (Date.parse(pendingTx.dateCreated) - Date.now()) > 60 * 1000) {
             return 'Invalid creation date.';
         }
         if (!node.getAddress(pendingTx.from)) {
@@ -133,7 +135,7 @@ class Transaction {
                 '0000000000000000000000000000000000000000000000000000000000000000',
                 '0000000000000000000000000000000000000000000000000000000000000000'
             ],
-            to = '0x4fca31d51de11ae31219d8d187ac6348b4bab7e5',
+            to = '0x999067568fed3f20dd265413e70f48a060dad93c',
             data = 'Genesis tx',
             value = 1000000000000,
             dateCreated = new Date().toISOString();
