@@ -51,9 +51,14 @@ class Node {
         this.setCumulativeDifficulty();
 
         //Create genesis block
-        let genesisBlock = new Block(1, [Transaction.genesisTransaction()], 0, '0'.repeat(40), null);
+        let genesisTransactions = Transaction.genesisTransaction();
+        let genesisBlock = new Block(0, [genesisTransactions], 0, '0'.repeat(40), null);
         genesisBlock.setMinedData(new Date().toISOString(), 0, '0'.repeat(64));
         this.blockchain.push(genesisBlock);
+        this.confirmedTransactions = {
+            ...this.confirmedTransactions,
+            genesisTransactions
+        };
         this.id = `${new Date().toISOString()}${this.blockchain[0].blockHash}`;
         this.newBlockBalances();
 

@@ -36,7 +36,7 @@ class BlockController {
 
     static blockByIndex(request, response) {
         const { index: requestedIndex } = request.params;
-        const block = node.find(({ index: { index } }) => index == requestedIndex);
+        const block = node.blockchain.find(({ index }) => index == requestedIndex);
         if (block) {
             return response.json(block);
         }
