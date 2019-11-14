@@ -19,7 +19,7 @@ class BlockController {
 
         block.transactions.forEach((transaction) => {
             const index = node.pendingTransactionsKeys.findIndex((tx) => tx === transaction.transactionDataHash);
-            if (index === 1) {
+            if (index !== -1) {
                 delete node.pendingTransactionsKeys[index]
                 delete node.pendingTransactions[transaction.transactionDataHash];
             }

@@ -88,9 +88,6 @@ class Transaction {
         if (!Transaction.verifyTransaction(pendingTx)) {
             return 'Transaction signature verification failed.'
         }
-        console.log('1 ', Date.parse(pendingTx.dateCreated) - Date.now());
-        console.log('2 ', Date.now());
-        console.log('4 ', Date.now() > Date.parse(pendingTx.dateCreated));
 
         if (isNaN(Date.parse(pendingTx.dateCreated)) || Date.parse(node.blockchain[0].dateCreated) >= Date.parse(pendingTx.dateCreated) || (Date.parse(pendingTx.dateCreated) - Date.now()) > 60 * 1000) {
             return 'Invalid creation date.';
@@ -103,6 +100,7 @@ class Transaction {
         }
         const value = new BigNumber(pendingTx.value);
         const fee = new BigNumber(pendingTx.fee);
+
         if (value.isNaN() || fee.isNaN() || !value.isInteger() || !fee.isInteger()) {
             return 'The transaction\'s value and fee must be valid integer numbers.';
         }

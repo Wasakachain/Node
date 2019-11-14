@@ -53,7 +53,7 @@ class Node {
         //Create genesis block
         let genesisTransactions = Transaction.genesisTransaction();
         let genesisBlock = new Block(0, [genesisTransactions], 0, '0'.repeat(40), null);
-        genesisBlock.setMinedData(new Date().toISOString(), 0, '0'.repeat(64));
+        genesisBlock.setMinedData('2019-11-14T23:33:03.915Z', 0, '0'.repeat(64));
         this.blockchain.push(genesisBlock);
         this.confirmedTransactions = {
             ...this.confirmedTransactions,
@@ -206,12 +206,12 @@ class Node {
     }
 
     calculateMinerReward() {
-        let base_reward = 5000000;
-        let fees_sum = 0;
+        let base_reward = new BigNumber(5000000);
+        let fees_sum = new BigNumber(0);
         this.pendingTransactionsKeys.forEach(transaction => {
-            fees_sum += parseInt(transaction.fee);
+            fees_sum = fees_sum.plus(this.pendingTransactions[transaction].fee);
         });
-        return base_reward + fees_sum;
+        return base_reward.plus(fees_sum).toString();
     }
 
     newMiningJob(minerAddress, difficulty) {
