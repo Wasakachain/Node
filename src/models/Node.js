@@ -156,6 +156,7 @@ class Node {
         NewBlock.emit('new_block');
         this.newBlockBalances();
         block.transactions.forEach((tx) => {
+            tx.minedInBlockIndex = block.index;
             this.confirmedTransactions = {
                 ...this.confirmedTransactions,
                 [tx.transactionDataHash]: tx
