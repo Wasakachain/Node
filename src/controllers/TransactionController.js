@@ -29,7 +29,7 @@ class TransactionController {
         if (!transaction.from || !transaction.to || !transaction.value || !transaction.fee || !transaction.senderPubKey || !transaction.senderSignature) {
             return response.status(400).send({ message: 'Transaction data missing.', sentTx: transaction });
         }
-        const error = Transaction.isInvalidPendingTx(transaction);
+        const error = Transaction.isInvalidPendingTx(transaction, node);
         if (error) {
             return response.status(400).send({ message: error, sentTx: transaction });
         }
