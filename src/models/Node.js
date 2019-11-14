@@ -57,7 +57,7 @@ class Node {
         this.blockchain.push(genesisBlock);
         this.confirmedTransactions = {
             ...this.confirmedTransactions,
-            genesisTransactions
+            [genesisTransactions.transactionDataHash]: genesisTransactions
         };
         this.id = `${new Date().toISOString()}${this.blockchain[0].blockHash}`;
         this.newBlockBalances();
@@ -151,11 +151,17 @@ class Node {
     addBlock(block) {
         this.setDifficulty(this.blockchain[this.blockchain.length - 1], block);
         this.blockchain.push(block);
-        this.newBlockBalances();
         this.addCumulativeDifficulty(block.difficulty);
         console.log('\x1b[46m%s\x1b[0m', 'New block mined!');
         NewBlock.emit('new_block');
         this.newBlockBalances();
+        block.transactions.forEach((tx) => {
+            this.confirmedTransactions = {
+                ...this.confirmedTransactions,
+                [tx.transactionDataHash]: tx
+            };
+        })
+        this.confirmedTransactionsKeys = Object.keys(this.confirmedTransactions);
     }
 
     addCumulativeDifficulty(blockDifficulty) {

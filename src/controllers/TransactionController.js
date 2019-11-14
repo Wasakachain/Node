@@ -44,6 +44,7 @@ class TransactionController {
             null,
             transaction.data
         );
+
         node.pendingTransactions[tx.transactionDataHash] = tx;
         node.pendingTransactionsKeys.push(tx.transactionDataHash);
 
