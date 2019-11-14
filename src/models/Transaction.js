@@ -118,6 +118,35 @@ class Transaction {
         }))
     }
 
+    static genesisTransaction() {
+        const from = '0000000000000000000000000000000000000000',
+            senderPubKey = '00000000000000000000000000000000000000000000000000000000000000000',
+            senderSignature = [
+                '0000000000000000000000000000000000000000000000000000000000000000',
+                '0000000000000000000000000000000000000000000000000000000000000000'
+            ],
+            to = '0x4fca31d51de11ae31219d8d187ac6348b4bab7e5',
+            data = 'Genesis tx',
+            value = 1000000000000,
+            dateCreated = new Date().toISOString();
+
+        return {
+            from,
+            to,
+            value,
+            fee: 0,
+            dateCreated: dateCreated,
+            data,
+            senderPubKey,
+            transactionDataHash: Transaction.dataHash({
+                to, value, fee: 0, data, minedInBlockIndex: 0, from, senderPubKey, senderSignature, dateCreated
+            }),
+            senderSignature,
+            minedInBlockIndex: 0,
+            isCoinbase: true
+        }
+    }
+
     /**
      * Create a coinbase transaction
      * @param {string} to address of transaction receiver

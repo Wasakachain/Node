@@ -21,17 +21,18 @@ class Node {
 
         this.onPeeerConnected = this.onPeeerConnected.bind(this);
         this.onNewBlock = this.onNewBlock.bind(this);
+        this.onNewTransaction = this.onNewTransaction.bind(this);
 
         // Event listeners
         NewPeerConnected.addListener('connection', this.onPeeerConnected)
         NewBlock.addListener('new_block', this.onNewBlock);
+        NewTransaction.addListener('transaction', this.onNewTransaction);
     }
 
     createGenesis() {
         // Blockchain attributes
         // blockchain initialization
         this.blockchain = [];
-        this.blocksCount = 0;
 
         // Transactions initialization
         this.pendingTransactions = {};
@@ -50,11 +51,11 @@ class Node {
         this.setCumulativeDifficulty();
 
         //Create genesis block
-        let genesisBlock = new Block(1, [], 0, '0'.repeat(40), null);
+        let genesisBlock = new Block(1, [Transaction.genesisTransaction()], 0, '0'.repeat(40), null);
         genesisBlock.setMinedData(new Date().toISOString(), 0, '0'.repeat(64));
         this.blockchain.push(genesisBlock);
         this.id = `${new Date().toISOString()}${this.blockchain[0].blockHash}`;
-        this.newBlockBalances(genesisBlock);
+        this.newBlockBalances();
 
     }
 
@@ -79,7 +80,6 @@ class Node {
     onNewBlock() {
         Object.keys(this.peers).forEach(peer => {
             request(`${this.peers[peer]}/peers/notify-new-block`, 'POST', {
-                blocksCount: this.blockchain.length,
                 cumulativeDifficulty: this.cumulativeDifficulty,
                 nodeUrl: address()
             }).catch((error) => {
@@ -126,7 +126,7 @@ class Node {
             }
             for (let j = 0; j < chain[i].transactions.length; j++) {
                 if (!Transaction.isValid(chain[i].transactions[j])) return false;
-                Address.checkBalances(newBalances, chain[i].transactions[j], chain[i].index, chain.length);
+                Address.checkBalances(newBalances, chain[i].transactions[j], chain.length);
             }
         }
         this.addresses = newBalances;
@@ -134,21 +134,23 @@ class Node {
         return true;
     }
 
-    newBlockBalances(block) {
-        block.transactions.forEach((tx) => {
-            Address.checkBalances(this.addresses, tx, block.index, this.blockchain.length);
-        });
+    newBlockBalances() {
+        this.blockchain.forEach((block) => {
+            block.transactions.forEach((tx) => {
+                Address.checkBalances(this.addresses, tx, this.blockchain.length);
+            });
+        })
         this.addressesKeys = Object.keys(this.addresses);
     }
 
     addBlock(block) {
         this.setDifficulty(this.blockchain[this.blockchain.length - 1], block);
         this.blockchain.push(block);
-        this.newBlockBalances(block);
+        this.newBlockBalances();
         this.addCumulativeDifficulty(block.difficulty);
         console.log('\x1b[46m%s\x1b[0m', 'New block mined!');
         NewBlock.emit('new_block');
-        this.newBlockBalances(block);
+        this.newBlockBalances();
     }
 
     addCumulativeDifficulty(blockDifficulty) {
@@ -235,8 +237,6 @@ class Node {
      *  
      */
 
-
-
     index() {
         return {
             about: 'WasakaChain Blockchain Node',
@@ -265,7 +265,6 @@ class Node {
     getGeneralInfo() {
         return {
             chainID: this.id,
-            blocksCount: this.blocksCount,
             cumulativeDifficulty: this.cumulativeDifficulty,
             confirmedTransactions: this.confirmedTransactionsKeys.length,
             pendingTransactions: this.pendingTransactionsKeys.length,

@@ -26,7 +26,7 @@ Router.post('/peers/notify-new-block', PeerControlller.blockNotification);
 Router.get('/blocks', BlockController.blockIndex); //Done
 Router.get('/blocks/:index', BlockController.blockByIndex); //done
 // defining the routes for the Transaction model
-Router.get('/transactions/', TransactionController.transactionIndex); //not found in instructions
+Router.get('/transactions', TransactionController.transactionIndex); //not found in instructions
 Router.get('/transactions/pending', TransactionController.pendingTransactions); //done
 Router.get('/transactions/confirmed', TransactionController.confirmedTransactions); //done
 Router.get('/transactions/:hash', TransactionController.show); //done
