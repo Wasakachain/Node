@@ -84,27 +84,27 @@ class Transaction {
         if (Transaction.dataHash(pendingTx) !== pendingTx.transactionDataHash) {
             return 'Invalid transaction hash.';
         }
-        if(!Array.isArray(pendingTx.senderSignature) || pendingTx.senderSignature.length !== 2) {
+        if (!Array.isArray(pendingTx.senderSignature) || pendingTx.senderSignature.length !== 2) {
             return 'Invalid transaction signature.'
         }
-        if(!pendingTx.verify()) {
+        if (!Transaction.verifyTransaction(pendingTx)) {
             return 'Transaction signature verification failed.'
         }
-        if(isNaN(Date.parse(pendingTx.dateCreated)) || Date.parse(node.blockchain[0].dateCreated) >= Date.parse(pendingTx.dateCreated) || (Date.now() < Date.parse(pendingTx.dateCreated))) {
+        if (isNaN(Date.parse(pendingTx.dateCreated)) || Date.parse(node.blockchain[0].dateCreated) >= Date.parse(pendingTx.dateCreated) || (Date.now() < Date.parse(pendingTx.dateCreated))) {
             return 'Invalid creation date.';
         }
-        if(!node.getAddress(pendingTx.from)) {
+        if (!node.getAddress(pendingTx.from)) {
             return 'The sender address doesn\'t the funds.';
         }
-        if(typeof pendingTx.value !== "string") {
+        if (typeof pendingTx.value !== "string") {
             return 'The transaction\'s value must be a string.';
         }
         const value = new BigNumber(pendingTx.value);
         const fee = new BigNumber(pendingTx.fee);
-        if(value.isNaN() || fee.isNaN() || !value.isInteger() || !fee.isInteger()) {
+        if (value.isNaN() || fee.isNaN() || !value.isInteger() || !fee.isInteger()) {
             return 'The transaction\'s value and fee must be valid integer numbers.';
         }
-        if(!node.getAddress(pendingTx.from).hasFunds(value.plus(fee))) {
+        if (!node.getAddress(pendingTx.from).hasFunds(value.plus(fee))) {
             return 'The sender address doesn\'t the funds.';
         }
         return false;

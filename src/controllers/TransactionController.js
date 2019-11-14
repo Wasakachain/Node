@@ -22,26 +22,26 @@ class TransactionController {
     }
 
     static sendTransaction(request, response) {
-        const { transaction } = request.params;
-        if(!transaction) {
-            return response.status(400).send({message: 'Transaction data required.'});
+        const { transaction } = request.body;
+        if (!transaction) {
+            return response.status(400).send({ message: 'Transaction data required.' });
         }
-        if(!transaction.from || !transaction.to || !transaction.value || !transaction.fee || !transaction.senderPubKey || !transaction.senderSignature) {
-            return response.status(400).send({message: 'Transaction data missing.', sentTx: transaction});
+        if (!transaction.from || !transaction.to || !transaction.value || !transaction.fee || !transaction.senderPubKey || !transaction.senderSignature) {
+            return response.status(400).send({ message: 'Transaction data missing.', sentTx: transaction });
         }
         const error = Transaction.isInvalidPendingTx(transaction);
-        if(error) {
-            return response.status(400).send({message: error, sentTx: transaction});
+        if (error) {
+            return response.status(400).send({ message: error, sentTx: transaction });
         }
         const tx = new Transaction(
-            transaction.from, 
-            transaction.to, 
-            transaction.value, 
-            transaction.fee, 
-            transaction.dateCreated, 
-            transaction.senderPubKey, 
-            transaction.senderSignature, 
-            null, 
+            transaction.from,
+            transaction.to,
+            transaction.value,
+            transaction.fee,
+            transaction.dateCreated,
+            transaction.senderPubKey,
+            transaction.senderSignature,
+            null,
             transaction.data
         );
         node.pendingTransactions[tx.transactionDataHash] = tx;
