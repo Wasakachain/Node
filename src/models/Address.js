@@ -8,25 +8,39 @@ class Address {
         this.pendingBalance = new BigNumber(0);
     }
 
-    static checkBalances(blockchain) {
-        let balances = {};
-        blockchain.forEach(({ transactions }) => {
-            transactions.forEach((tx) => {
-                if (!balances[tx.from]) {
-                    balances[tx.from] = new Address(tx.from);
-                }
-                if (!balances[tx.to]) {
-                    balances[tx.to] = new Address(tx.to);
-                }
-                balances[tx.from].substractSafeBalance(tx.value + tx.fee)
-                balances[tx.to].addSafeBalance(tx.value + tx.fee)
-            });
-        });
+    /**
+     * 
+     * @param {Array} addresses addresses object of the node
+     * @param {Transaction} tx transaction to examine
+     * @param {number} blockchainLength blockchain length
+     */
+    static checkBalances(addresses, tx, blockchainLength) {
+        if (!addresses[tx.to]) {
+            addresses[tx.to] = new Address(tx.to)
+        }
 
-        return {
-            balances,
-            balancesKeys: Object.keys(balances),
-        };
+        if (!addresses[tx.from]) {
+            addresses[tx.from] = new Address(tx.from)
+        }
+
+        if ((blockchainLength - tx.minedInBlockIndex) > 6) {
+            addresses[tx.to].safeBalance = addresses[tx.to].safeBalance.plus(tx.value);
+        } else {
+            addresses[tx.to].confirmedBalance = addresses[tx.to].confirmedBalance.plus(tx.value);
+        }
+
+        const amount = new BigNumber(tx.value + tx.fee);
+        if (addresses[tx.from].safeBalance.comparedTo(amount) < 0) {
+
+            addresses[tx.from].confirmedBalance =
+                addresses[tx.from].confirmedBalance.minus(
+                    amount.minus(addresses[tx.from].safeBalance)
+                );
+            addresses[tx.from].safeBalance = new BigNumber(0);
+        } else {
+            addresses[tx.from].safeBalance = addresses[tx.from].safeBalance.minus(amount);
+        }
+
     }
 
     hasFunds(amount) {

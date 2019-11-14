@@ -16,24 +16,25 @@ class Node {
         // Iinicialize Blockchain
         this.createGenesis();
 
-        // Peers inicialization
+        // Peers initialization
         this.peers = {};
 
         this.onPeeerConnected = this.onPeeerConnected.bind(this);
         this.onNewBlock = this.onNewBlock.bind(this);
+        this.onNewTransaction = this.onNewTransaction.bind(this);
 
         // Event listeners
         NewPeerConnected.addListener('connection', this.onPeeerConnected)
         NewBlock.addListener('new_block', this.onNewBlock);
+        NewTransaction.addListener('transaction', this.onNewTransaction);
     }
 
     createGenesis() {
         // Blockchain attributes
-        // blockchain inicialization
+        // blockchain initialization
         this.blockchain = [];
-        this.blocksCount = 0;
 
-        // Transactions inicialization
+        // Transactions initialization
         this.pendingTransactions = {};
         this.pendingTransactionsKeys = [];
         this.confirmedTransactions = {};
@@ -41,19 +42,20 @@ class Node {
 
         this.miningJobs = {};
 
-        // Addresses inicialization
+        // Addresses initialization
         this.addresses = {};
         this.addressesKeys = [];
 
-        // Difficulty inicialization
+        // Difficulty initialization
         this.currentDifficulty = process.env.difficulty || 4;
         this.setCumulativeDifficulty();
 
         //Create genesis block
-        let genesisBlock = new Block(1, [], 0, '0'.repeat(40), null);
+        let genesisBlock = new Block(1, [Transaction.genesisTransaction()], 0, '0'.repeat(40), null);
         genesisBlock.setMinedData(new Date().toISOString(), 0, '0'.repeat(64));
         this.blockchain.push(genesisBlock);
         this.id = `${new Date().toISOString()}${this.blockchain[0].blockHash}`;
+        this.newBlockBalances();
 
     }
 
@@ -78,7 +80,6 @@ class Node {
     onNewBlock() {
         Object.keys(this.peers).forEach(peer => {
             request(`${this.peers[peer]}/peers/notify-new-block`, 'POST', {
-                blocksCount: this.blockchain.length,
                 cumulativeDifficulty: this.cumulativeDifficulty,
                 nodeUrl: address()
             }).catch((error) => {
@@ -125,19 +126,7 @@ class Node {
             }
             for (let j = 0; j < chain[i].transactions.length; j++) {
                 if (!Transaction.isValid(chain[i].transactions[j])) return false;
-                if (!newBalances[chain[i].transactions[j].from]) {
-                    newBalances[chain[i].transactions[j].from] =
-                        new Address(chain[i].transactions[j].from);
-                }
-                if (!newBalances[chain[i].transactions[j].to]) {
-                    newBalances[chain[i].transactions[j].to] =
-                        new Address(chain[i].transactions[j].to);
-                }
-                newBalances[chain[i].transactions[j].from]
-                    .substractSafeBalance(chain[i].transactions[j].value + chain[i].transactions[j].fee)
-
-                newBalances[chain[i].transactions[j].to].
-                    addSafeBalance(chain[i].transactions[j].value + chain[i].transactions[j].fee)
+                Address.checkBalances(newBalances, chain[i].transactions[j], chain.length);
             }
         }
         this.addresses = newBalances;
@@ -145,6 +134,108 @@ class Node {
         return true;
     }
 
+    newBlockBalances() {
+        this.blockchain.forEach((block) => {
+            block.transactions.forEach((tx) => {
+                Address.checkBalances(this.addresses, tx, this.blockchain.length);
+            });
+        })
+        this.addressesKeys = Object.keys(this.addresses);
+    }
+
+    addBlock(block) {
+        this.setDifficulty(this.blockchain[this.blockchain.length - 1], block);
+        this.blockchain.push(block);
+        this.newBlockBalances();
+        this.addCumulativeDifficulty(block.difficulty);
+        console.log('\x1b[46m%s\x1b[0m', 'New block mined!');
+        NewBlock.emit('new_block');
+        this.newBlockBalances();
+    }
+
+    addCumulativeDifficulty(blockDifficulty) {
+        this.cumulativeDifficulty += Math.pow(16, blockDifficulty)
+    }
+
+    setDifficulty(prevBlock, newBlock) {
+        return 4;
+        let difference = moment(newBlock.dateCreated).diff(prevBlock.dateCreated, "minutes");
+        if (difference < BLOCKS_PER_MINUTE) {
+            this.currentDifficulty += 1;
+        } else {
+            this.cumulativeDifficulty -= 1;
+        }
+    }
+
+    synchronizeTransactions(nodeTransactions) {
+        this.pendingTransactions = [...Object.values(this.pendingTransactions), ...Object.values(nodeTransactions).filter((transaction) => {
+            return !this.pendingTransactions[transaction.transactionDataHash];
+        })];
+
+        this.pendingTransactionsKeys = Object.keys(this.pendingTransactionsKeys);
+    }
+
+    async registerNode(address) {
+        try {
+            const res = await request(`${address}/info`);
+            if (res) {
+                this.peers.push(address);
+            }
+        } catch (error) { }
+    }
+
+    addAddress(addressData) {
+        this.addresses[addressData.address] = {
+            address: addressData.address,
+            safeBalance: 0,
+            confirmedBalance: 0,
+            pendingBalance: 0
+        };
+        this.addressesKeys.push(addressData.address);
+    }
+
+    calculateMinerReward() {
+        let base_reward = 5000000;
+        let fees_sum = 0;
+        this.pendingTransactionsKeys.forEach(transaction => {
+            fees_sum += parseInt(transaction.fee);
+        });
+        return base_reward + fees_sum;
+    }
+
+    newMiningJob(minerAddress, difficulty) {
+        // create candidate
+        const candidateBlock = new Block(
+            this.blockchain.length,
+            [
+                Transaction.coinbaseTransaction(
+                    minerAddress, this.calculateMinerReward(),
+                    0,
+                    this.blockchain.length
+                ),
+                ...Object.values(this.pendingTransactions),
+            ],
+            difficulty || this.currentDifficulty,
+            minerAddress,
+            this.blockchain[this.blockchain.length - 1].blockHash,
+        );
+        this.miningJobs[candidateBlock.blockDataHash] = candidateBlock;
+
+        return {
+            index: this.blockchain.length,
+            transactionsIncluded: this.pendingTransactions.length,
+            difficulty: this.currentDifficulty,
+            expectedReward: process.env.reward || 1,
+            rewardAddress: minerAddress,
+            blockDataHash: candidateBlock.blockDataHash,
+        };
+    }
+
+    /**
+     *
+     *   GETTERS
+     *  
+     */
 
     index() {
         return {
@@ -174,7 +265,6 @@ class Node {
     getGeneralInfo() {
         return {
             chainID: this.id,
-            blocksCount: this.blocksCount,
             cumulativeDifficulty: this.cumulativeDifficulty,
             confirmedTransactions: this.confirmedTransactionsKeys.length,
             pendingTransactions: this.pendingTransactionsKeys.length,
@@ -214,76 +304,6 @@ class Node {
         }
     }
 
-    newBlockBalances(block) {
-        block.transactions.forEach((tx) => {
-            if (!this.addresses[tx.from]) {
-                this.addresses[tx.from] =
-                    new Address(tx.from);
-            }
-            if (!this.addresses[tx.to]) {
-                this.addresses[tx.to] =
-                    new Address(tx.value);
-            }
-            this.addresses[tx.from]
-                .substractSafeBalance(tx.value + tx.fee)
-
-            this.addresses[tx.to].
-                addSafeBalance(tx.value + tx.fee)
-        });
-    }
-
-    addBlock(block) {
-        this.setDifficulty(this.blockchain[this.blockchain.length - 1], block);
-        this.blockchain.push(block);
-        this.newBlockBalances(block);
-        this.addCumulativeDifficulty(block.difficulty);
-        console.log('\x1b[46m%s\x1b[0m', 'New block mined!');
-        NewBlock.emit('new_block');
-        const { balances, balancesKeys } = Address.checkBalances(this.blockchain);
-        this.addresses = balances;
-        this.addressesKeys = balancesKeys;
-    }
-
-    addCumulativeDifficulty(blockDifficulty) {
-        this.cumulativeDifficulty += Math.pow(16, blockDifficulty)
-    }
-
-    setDifficulty(prevBlock, newBlock) {
-        let difference = moment(newBlock.dateCreated).diff(prevBlock.dateCreated, "minutes");
-        if (difference < BLOCKS_PER_MINUTE) {
-            this.currentDifficulty += 1;
-        } else {
-            this.cumulativeDifficulty -= 1;
-        }
-    }
-
-    synchronizeTransactions(nodeTransactions) {
-        this.pendingTransactions = [...Object.values(this.pendingTransactions), ...Object.values(nodeTransactions).filter((transaction) => {
-            return !this.pendingTransactions[transaction.transactionDataHash];
-        })];
-
-        this.pendingTransactionsKeys = Object.keys(this.pendingTransactionsKeys);
-    }
-
-    async registerNode(address) {
-        try {
-            const res = await request(`${address}/info`);
-            if (res) {
-                this.peers.push(address);
-            }
-        } catch (error) { }
-    }
-
-    addAddress(addressData) {
-        this.addresses[addressData.address] = {
-            address: addressData.address,
-            safeBalance: 0,
-            confirmedBalance: 0,
-            pendingBalance: 0
-        };
-        this.addressesKeys.push(addressData.address);
-    }
-
     getConfirmedBalances() {
         // if (addresses) {
         //     return addresses.filter(({ confirmedBalance }) => confirmedBalance !== 0 || );
@@ -306,43 +326,6 @@ class Node {
                 });
         }
         return null;
-    }
-
-    calculateMinerReward() {
-        let base_reward = 5000000;
-        let fees_sum = 0;
-        this.pendingTransactionsKeys.forEach(transaction => {
-            fees_sum += parseInt(transaction.fee);
-        });
-        return base_reward + fees_sum;
-    }
-
-    newMiningJob(minerAddress, difficulty) {
-        // create candidate
-        const candidateBlock = new Block(
-            this.blockchain.length,
-            [
-                Transaction.coinbaseTransaction(
-                    minerAddress, this.calculateMinerReward(),
-                    0,
-                    this.blockchain.length
-                ),
-                ...Object.values(this.pendingTransactions),
-            ],
-            difficulty || this.currentDifficulty,
-            minerAddress,
-            this.blockchain[this.blockchain.length - 1].blockHash,
-        );
-        this.miningJobs[candidateBlock.blockDataHash] = candidateBlock;
-
-        return {
-            index: this.blockchain.length,
-            transactionsIncluded: this.pendingTransactions.length,
-            difficulty: this.currentDifficulty,
-            expectedReward: process.env.reward || 1,
-            rewardAddress: minerAddress,
-            blockDataHash: candidateBlock.blockDataHash,
-        };
     }
 }
 

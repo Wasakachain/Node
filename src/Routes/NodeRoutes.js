@@ -30,6 +30,6 @@ Router.get('/transactions', TransactionController.transactionIndex); //not found
 Router.get('/transactions/pending', TransactionController.pendingTransactions); //done
 Router.get('/transactions/confirmed', TransactionController.confirmedTransactions); //done
 Router.get('/transactions/:hash', TransactionController.show); //done
-Router.post('transactions/send', TransactionController.sendTransaction);
+Router.post('/transactions/send', TransactionController.sendTransaction);
 
 module.exports = Router;
