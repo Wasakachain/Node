@@ -140,11 +140,13 @@ class Node {
     }
 
     newBlockBalances() {
+        let newBalances = {}
         this.blockchain.forEach((block) => {
             block.transactions.forEach((tx) => {
-                Address.checkBalances(this.addresses, tx, this.blockchain.length);
+                Address.checkBalances(newBalances, tx, this.blockchain.length);
             });
         })
+        this.addresses = newBalances;
         this.addressesKeys = Object.keys(this.addresses);
     }
 
