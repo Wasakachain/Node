@@ -113,7 +113,8 @@ exports.paginateBlocks = (blocks, paginationObj) => {
         currentPage: current_page,
         nextPage: current_page < lastPage ? current_page + 1 : null,
         lastPage: lastPage !== 0 ? lastPage : 1,
-        blocksPerPage: paginate
+        blocksPerPage: paginate,
+        totalBlocks: blocks.length
     };
 }
 
@@ -146,7 +147,8 @@ exports.paginateTransactions = (transactions, paginationObj) => {
         currentPage: current_page,
         nextPage: current_page < lastPage ? current_page + 1 : null,
         lastPage: lastPage !== 0 ? lastPage : 1,
-        transactionsPerPage: paginate
+        transactionsPerPage: paginate,
+        totalTransactions: transactions.length
     };
 }
 
