@@ -33,8 +33,7 @@ class TransactionController {
         if (error) {
             return response.status(400).send({ message: error, sentTx: transaction });
         }
-
-        if (node.pendingTransactions.find((tx) => tx.transactionDataHash === transaction.transactionDataHash)) {
+        if ([...node.confirmedTransactions, ...node.pendingTransactions].find((tx) => tx.transactionDataHash === transaction.transactionDataHash)) {
             return response.status(409).send({ message: 'Transaction already exists', sentTx: transaction });
         }
 

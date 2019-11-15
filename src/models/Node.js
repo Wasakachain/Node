@@ -53,10 +53,10 @@ class Node {
         let genesisBlock = new Block(0, [genesisTransactions], 0, '0'.repeat(40), null);
         genesisBlock.setMinedData('2019-11-14T23:33:03.915Z', 0, '0'.repeat(64));
         this.blockchain.push(genesisBlock);
-        this.confirmedTransactions = {
+        this.confirmedTransactions = [
             ...this.confirmedTransactions,
-            [genesisTransactions.transactionDataHash]: genesisTransactions
-        };
+            genesisTransactions
+        ];
         this.id = `${new Date().toISOString()}${this.blockchain[0].blockHash}`;
         this.newBlockBalances();
 
@@ -171,10 +171,10 @@ class Node {
         this.newBlockBalances();
         block.transactions.forEach((tx) => {
             tx.minedInBlockIndex = block.index;
-            this.confirmedTransactions = {
+            this.confirmedTransactions = [
                 ...this.confirmedTransactions,
-                [tx.transactionDataHash]: tx
-            };
+                tx
+            ];
         })
     }
 
@@ -224,6 +224,8 @@ class Node {
                     new Address(tx.to);
             }
             this.addresses[tx.to].pendingBalance = this.addresses[tx.to].confirmedBalance.plus(new BigNumber(tx.value));
+
+            this.addresses[tx.from].pendingBalance = this.addresses[tx.from].confirmedBalance.minus(new BigNumber(tx.value).plus(tx.fee));
         })
     }
 

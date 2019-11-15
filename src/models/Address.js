@@ -42,8 +42,11 @@ class Address {
         }
     }
 
-    hasFunds(amount) {
-        return (this.safeBalance.plus(this.confirmedBalance)).comparedTo(amount) > 0;
+    hasFunds(amount, pendingTransactions) {
+        if (pendingTransactions.find((tx) => tx.from === this.address)) {
+            return this.confirmedBalance.comparedTo(amount) >= 0 && this.pendingBalance.comparedTo(amount) >= 0;
+        }
+        return this.confirmedBalance.comparedTo(amount) >= 0;
     }
 
     addSafeBalance(value) {

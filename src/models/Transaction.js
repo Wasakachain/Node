@@ -1,5 +1,6 @@
 const { sha256, verifySignature } = require('../utils/hash');
 const { isValidAddress } = require('../utils/functions');
+const Address = require('./Address');
 const BigNumber = require('bignumber.js');
 class Transaction {
     /**
@@ -99,6 +100,7 @@ class Transaction {
         if (!node.getAddress(pendingTx.from)) {
             return 'The sender address doesn\'t the funds.';
         }
+
         if (typeof pendingTx.value !== "string") {
             return 'The transaction\'s value must be a string.';
         }
@@ -108,7 +110,7 @@ class Transaction {
         if (value.isNaN() || fee.isNaN() || !value.isInteger() || !fee.isInteger()) {
             return 'The transaction\'s value and fee must be valid integer numbers.';
         }
-        if (!node.getAddress(pendingTx.from).hasFunds(value.plus(fee))) {
+        if (!node.getAddress(pendingTx.from).hasFunds(value.plus(fee), node.pendingTransactions)) {
             return 'The sender address doesn\'t the funds.';
         }
         return false;
@@ -139,7 +141,7 @@ class Transaction {
             ],
             to = '0x999067568fed3f20dd265413e70f48a060dad93c',
             data = 'Genesis tx',
-            value = 1000000000000,
+            value = '1000000000',
             dateCreated = new Date().toISOString();
 
         return {
