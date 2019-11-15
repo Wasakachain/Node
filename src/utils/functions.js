@@ -122,7 +122,7 @@ exports.paginateTransactions = (transactions, paginationObj) => {
     let { current_page, paginate } = paginationObj;
     // if its a node request, just simply returns all the transactions
     if (!paginate && !current_page) {
-        return {transactions};
+        return transactions;
     }
     // set the variables
     if (!paginate) {

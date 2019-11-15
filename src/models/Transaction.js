@@ -12,8 +12,8 @@ class Transaction {
      * @param {string} senderPubKey sender public key
      * @param {Array} senderSignature sender signature
      * @param {number} minedInBlockIndex index of the block where the transaction will be placed
-     * @param {boolean} transferSuccessful  
      * @param {string} data transaction data
+     * @param {boolean} transferSuccessful  
      */
     constructor(from, to, value, fee, dateCreated, senderPubKey, senderSignature, minedInBlockIndex, data, transferSuccessful = true) {
         this.from = from;
@@ -23,7 +23,7 @@ class Transaction {
         this.dateCreated = isNaN(Date.parse(dateCreated)) ? new Date().toISOString() : dateCreated;
         this.data = data;
         this.senderPubKey = senderPubKey;
-        this.transactionDataHash = Transaction.dataHash({ from, to, value, fee, dateCreated: this.dateCreated, senderPubKey });
+        this.transactionDataHash = Transaction.dataHash({ from, to, value, fee, dateCreated: isNaN(Date.parse(dateCreated)) ? new Date().toISOString() : dateCreated, data, senderPubKey });
         this.senderSignature = senderSignature;
         this.minedInBlockIndex = minedInBlockIndex;
         this.transferSuccessful = transferSuccessful;
@@ -89,6 +89,10 @@ class Transaction {
             return 'Transaction signature verification failed.'
         }
 
+        if (pendingTx.fee < 10) {
+            return 'The minimum fee is 10'
+        }
+
         if (isNaN(Date.parse(pendingTx.dateCreated)) || Date.parse(node.blockchain[0].dateCreated) >= Date.parse(pendingTx.dateCreated) || (Date.parse(pendingTx.dateCreated) - Date.now()) > 60 * 1000) {
             return 'Invalid creation date.';
         }
@@ -114,7 +118,7 @@ class Transaction {
      * Calculate the data hash of the given transaction and return it
      * @param {Transaction}  transaction
      */
-    static dataHash({ from, to, value, fee, dateCreated, data, senderPubKey }) {
+    static dataHash({ from, to, value, fee, dateCreated, senderPubKey, data }) {
         return sha256(JSON.stringify({
             from,
             to,

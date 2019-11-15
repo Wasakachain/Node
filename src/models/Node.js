@@ -35,10 +35,8 @@ class Node {
         this.blockchain = [];
 
         // Transactions initialization
-        this.pendingTransactions = {};
-        this.pendingTransactionsKeys = [];
-        this.confirmedTransactions = {};
-        this.confirmedTransactionsKeys = [];
+        this.pendingTransactions = [];
+        this.confirmedTransactions = [];
 
         this.miningJobs = {};
 
@@ -80,6 +78,20 @@ class Node {
                     }
                 });
         });
+
+        this.pendingTransactions.sort((a, b) => {
+            if (a.fee > b.fee) {
+                return -1;
+            }
+
+            if (a.fee < b.fee) {
+                return 1;
+            }
+
+            return 0;
+        });
+
+        this.checkPendingBalances();
     }
 
     onNewBlock() {
@@ -164,7 +176,6 @@ class Node {
                 [tx.transactionDataHash]: tx
             };
         })
-        this.confirmedTransactionsKeys = Object.keys(this.confirmedTransactions);
     }
 
     addCumulativeDifficulty(blockDifficulty) {
@@ -185,8 +196,6 @@ class Node {
         this.pendingTransactions = [...Object.values(this.pendingTransactions), ...Object.values(nodeTransactions).filter((transaction) => {
             return !this.pendingTransactions[transaction.transactionDataHash];
         })];
-
-        this.pendingTransactionsKeys = Object.keys(this.pendingTransactionsKeys);
     }
 
     async registerNode(address) {
@@ -208,11 +217,21 @@ class Node {
         this.addressesKeys.push(addressData.address);
     }
 
+    checkPendingBalances() {
+        this.pendingTransactions.forEach((tx) => {
+            if (!this.addresses[tx.to]) {
+                this.addresses[tx.to] =
+                    new Address(tx.to);
+            }
+            this.addresses[tx.to].pendingBalance = this.addresses[tx.to].confirmedBalance.plus(new BigNumber(tx.value));
+        })
+    }
+
     calculateMinerReward() {
         let base_reward = new BigNumber(5000000);
         let fees_sum = new BigNumber(0);
-        this.pendingTransactionsKeys.forEach(transaction => {
-            fees_sum = fees_sum.plus(this.pendingTransactions[transaction].fee);
+        this.pendingTransactions.forEach(transaction => {
+            fees_sum = fees_sum.plus(transaction.fee);
         });
         return base_reward.plus(fees_sum).toString();
     }
@@ -280,8 +299,8 @@ class Node {
         return {
             chainID: this.id,
             cumulativeDifficulty: this.cumulativeDifficulty,
-            confirmedTransactions: this.confirmedTransactionsKeys.length,
-            pendingTransactions: this.pendingTransactionsKeys.length,
+            confirmedTransactions: this.confirmedTransactions.length,
+            pendingTransactions: this.pendingTransactions.length,
             peers: this.peers,
         }
     }

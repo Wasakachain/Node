@@ -1,4 +1,3 @@
-const http = require('http');
 const crypto = require('crypto');
 const elliptic = require('elliptic');
 const ec = new elliptic.ec('secp256k1');

@@ -18,13 +18,9 @@ class BlockController {
         node.miningJobs = {};
 
         block.transactions.forEach((transaction) => {
-            const index = node.pendingTransactionsKeys.findIndex((tx) => tx === transaction.transactionDataHash);
-            if (index !== -1) {
-                delete node.pendingTransactionsKeys[index]
-                delete node.pendingTransactions[transaction.transactionDataHash];
-            }
+            node.pendingTransactions =
+                node.pendingTransactions.filter((tx) => tx.transactionDataHash !== transaction.transactionDataHash)
         });
-
         node.addBlock(block)
         return response.send({ message: `Block accepted, reward paid: ${block.transactions[0].value}` });
     }
