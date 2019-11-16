@@ -90,7 +90,6 @@ class Node {
 
             return 0;
         });
-
         this.checkPendingBalances();
     }
 
@@ -105,6 +104,18 @@ class Node {
                 }
             });
         });
+        this.pendingTransactions.sort((a, b) => {
+            if (a.fee > b.fee) {
+                return -1;
+            }
+
+            if (a.fee < b.fee) {
+                return 1;
+            }
+
+            return 0;
+        });
+        this.checkPendingBalances();
     }
 
     async onPeeerConnected(peer) {
@@ -218,15 +229,25 @@ class Node {
     }
 
     checkPendingBalances() {
+        Object.values(this.addresses).forEach((address) => address.pendingBalance = new BigNumber(0));
         this.pendingTransactions.forEach((tx) => {
             if (!this.addresses[tx.to]) {
                 this.addresses[tx.to] =
                     new Address(tx.to);
             }
-            this.addresses[tx.to].pendingBalance = this.addresses[tx.to].confirmedBalance.plus(new BigNumber(tx.value));
 
-            this.addresses[tx.from].pendingBalance = this.addresses[tx.from].confirmedBalance.minus(new BigNumber(tx.value).plus(tx.fee));
-        })
+            if (!this.addresses[tx.to].pendingBalance.isZero()) {
+                this.addresses[tx.to].pendingBalance = this.addresses[tx.to].pendingBalance.plus(new BigNumber(tx.value));
+            } else {
+                this.addresses[tx.to].pendingBalance = this.addresses[tx.to].confirmedBalance.plus(new BigNumber(tx.value));
+            }
+
+            if (!this.addresses[tx.from].pendingBalance.isZero()) {
+                this.addresses[tx.from].pendingBalance = this.addresses[tx.from].pendingBalance.minus(new BigNumber(tx.value).plus(tx.fee));
+            } else {
+                this.addresses[tx.from].pendingBalance = this.addresses[tx.from].confirmedBalance.minus(new BigNumber(tx.value).plus(tx.fee));
+            }
+        });
     }
 
     calculateMinerReward() {
@@ -236,6 +257,15 @@ class Node {
             fees_sum = fees_sum.plus(transaction.fee);
         });
         return base_reward.plus(fees_sum).toString();
+    }
+
+    filterTransactions() {
+        let transactions = [];
+        this.pendingTransactions.forEach((pTx) => {
+            if (transactions.find((tx) => tx.from === pTx.from)) return;
+            transactions.push(pTx);
+        });
+        return transactions;
     }
 
     newMiningJob(minerAddress, difficulty) {
@@ -248,7 +278,7 @@ class Node {
                     0,
                     this.blockchain.length
                 ),
-                ...Object.values(this.pendingTransactions),
+                ...this.filterTransactions(),
             ],
             difficulty || this.currentDifficulty,
             minerAddress,

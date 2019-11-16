@@ -52,7 +52,6 @@ class Transaction {
      */
     static isValid(transaction) {
         //TO DO: COMPLETE THIS METHOD
-
         if (transaction.fee < 10 && !transaction.isCoinbase) {
             return false;
         }
@@ -66,7 +65,6 @@ class Transaction {
         }
 
         return true;
-
     }
 
     /**
