@@ -70,6 +70,16 @@ class Node {
     }
 
     onNewTransaction(transaction) {
+
+        Object.keys(this.peers).forEach(peer => {
+            request(`${this.peers[peer]}/transactions/send`, 'POST', transaction)
+                .catch((error) => {
+                    if (!error.status) {
+                        delete this.peers[peer];
+                    }
+                });
+        });
+
         this.pendingTransactions.sort((a, b) => {
             if (a.fee > b.fee) {
                 return -1;
@@ -82,15 +92,6 @@ class Node {
             return 0;
         });
         this.checkPendingBalances();
-
-        Object.keys(this.peers).forEach(peer => {
-            request(`${this.peers[peer]}/transactions/send`, 'POST', transaction)
-                .catch((error) => {
-                    if (!error.status) {
-                        delete this.peers[peer];
-                    }
-                });
-        });
 
     }
 
