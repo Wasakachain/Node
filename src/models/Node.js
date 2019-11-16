@@ -70,15 +70,6 @@ class Node {
     }
 
     onNewTransaction(transaction) {
-        Object.keys(this.peers).forEach(peer => {
-            request(`${this.peers[peer]}/transaction/send`, 'POST', transaction)
-                .catch(() => {
-                    if (!error.status) {
-                        delete this.peers[peer];
-                    }
-                });
-        });
-
         this.pendingTransactions.sort((a, b) => {
             if (a.fee > b.fee) {
                 return -1;
@@ -91,6 +82,16 @@ class Node {
             return 0;
         });
         this.checkPendingBalances();
+
+        Object.keys(this.peers).forEach(peer => {
+            request(`${this.peers[peer]}/transactions/send`, 'POST', transaction)
+                .catch((error) => {
+                    if (!error.status) {
+                        delete this.peers[peer];
+                    }
+                });
+        });
+
     }
 
     onNewBlock() {
@@ -119,42 +120,56 @@ class Node {
     }
 
     async onPeeerConnected(peer) {
-        await this.checkBetterChain(peer);
+        await this.synchronizePeer(peer);
     }
 
     shouldDownloadChain(difficulty) {
-        return difficulty > this.cumulativeDifficulty
-    }
-
-    async checkBetterChain(peer) {
-        let res = await request(`${peer}/info`);
-        if (this.shouldDownloadChain(res.data.cumulativeDifficulty)) {
-            await this.synchronizePeer(peer);
-        }
+        return new BigNumber(difficulty).comparedTo(this.cumulativeDifficulty) > 0;
     }
 
     async synchronizePeer(peer) {
         try {
-            let res = await request(`${peer}/blocks`);
-            if (!this.validateNewChain(res.data)) return;
+            let res = await request(`${peer}/info`);
+            if (this.shouldDownloadChain(res.data.cumulativeDifficulty)) {
+                await this.synchronizeChain(peer);
+            }
+            await this.synchronizeTransactions(peer);
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
+    async synchronizeTransactions(peer) {
+        try {
             let resTxs = await request(`${peer}/transactions/pending`);
-            this.synchronizeTransactions(resTxs.data.transactions);
-            NewBlock.emit('new_block');
+            this.updateTransactions(resTxs.data);
+            console.log('\x1b[43m%s\x1b[0m', `syncronized with ${peer}`)
         } catch (error) {
             console.log(error)
         }
-        console.log('\x1b[43m%s\x1b[0m', `syncronized with ${peer}`)
+    }
+
+    async synchronizeChain(peer) {
+        try {
+            let res = await request(`${peer}/blocks`);
+            if (!this.validateNewChain(res.data)) return;
+            NewBlock.emit('new_block');
+            console.log('\x1b[43m%s\x1b[0m', `syncronized with ${peer}`)
+        } catch (error) {
+            console.log(error)
+        }
     }
 
     validateNewChain(chain) {
         let newBalances = {};
-        for (let i = 1; i < chain.length; i++) {
-            if (!Block.isValid(chain[i])) {
-                return false;
-            }
+        for (let i = 0; i < chain.length; i++) {
             for (let j = 0; j < chain[i].transactions.length; j++) {
                 if (!Transaction.isValid(chain[i].transactions[j])) return false;
                 Address.checkBalances(newBalances, chain[i].transactions[j], chain.length);
+            }
+
+            if (i !== 0 && !Block.isValid(chain[i])) {
+                return false;
             }
         }
         this.addresses = newBalances;
@@ -203,10 +218,16 @@ class Node {
         }
     }
 
-    synchronizeTransactions(nodeTransactions) {
-        this.pendingTransactions = [...Object.values(this.pendingTransactions), ...Object.values(nodeTransactions).filter((transaction) => {
-            return !this.pendingTransactions[transaction.transactionDataHash];
-        })];
+    updateTransactions(nodeTransactions) {
+        let newTransactions = {};
+        [...this.pendingTransactions, ...nodeTransactions].forEach((transaction, index) => {
+            if (newTransactions[transaction.transactionDataHash]) {
+                return;
+            }
+            newTransactions[transaction.transactionDataHash] = transaction;
+        });
+
+        this.pendingTransactions = Object.values(newTransactions);
     }
 
     async registerNode(address) {

@@ -40,7 +40,7 @@ class PeerController {
     static blockNotification(req, response) {
         const { cumulativeDifficulty, nodeUrl } = req.body;
         if (node.shouldDownloadChain(cumulativeDifficulty)) {
-            node.synchronizePeer(nodeUrl);
+            node.synchronizeChain(nodeUrl);
         }
         return response.send({ message: 'Thank you for the notification' });
     }

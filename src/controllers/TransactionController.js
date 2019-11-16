@@ -22,7 +22,7 @@ class TransactionController {
     }
 
     static sendTransaction(request, response) {
-        const { transaction } = request.body;
+        const transaction = request.body;
         if (!transaction) {
             return response.status(400).send({ message: 'Transaction data required.' });
         }
