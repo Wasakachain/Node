@@ -4,7 +4,7 @@ const { paginateBlocks } = require('../utils/functions');
 
 class BlockController {
     static receiveBlock(req, response) {
-        const { blockDataHash, dateCreated, nonce, blockHash } = req.body;
+        const { blockDataHash = '', dateCreated, nonce, blockHash } = req.body;
         let block = node.miningJobs[blockDataHash]
         if (!block) {
             return response.status(404).send({ errorMsg: 'Block not found or already mined' });
@@ -16,11 +16,6 @@ class BlockController {
         }
 
         node.miningJobs = {};
-
-        block.transactions.forEach((transaction) => {
-            node.pendingTransactions =
-                node.pendingTransactions.filter((tx) => tx.transactionDataHash !== transaction.transactionDataHash)
-        });
         node.addBlock(block)
         return response.send({ message: `Block accepted, reward paid: ${block.transactions[0].value}` });
     }

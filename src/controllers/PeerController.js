@@ -8,6 +8,11 @@ class PeerController {
 
     static async connectPeer(req, response) {
         const { peerUrl } = req.body;
+
+        if (!peerUrl) {
+            return response.status(400).send({ errorMsg: 'peerUrl is required' });
+        }
+
         try {
             let res = await request(`${peerUrl}/info`, 'GET');
             if (node.peers[res.data.nodeID]) {

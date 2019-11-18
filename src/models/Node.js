@@ -70,6 +70,7 @@ class Node {
     }
 
     onNewTransaction(transaction) {
+        this.checkPendingBalances();
 
         Object.keys(this.peers).forEach(peer => {
             request(`${this.peers[peer]}/transactions/send`, 'POST', transaction)
@@ -79,19 +80,6 @@ class Node {
                     }
                 });
         });
-
-        this.pendingTransactions.sort((a, b) => {
-            if (a.fee > b.fee) {
-                return -1;
-            }
-
-            if (a.fee < b.fee) {
-                return 1;
-            }
-
-            return 0;
-        });
-        this.checkPendingBalances();
 
     }
 
@@ -106,18 +94,6 @@ class Node {
                 }
             });
         });
-        this.pendingTransactions.sort((a, b) => {
-            if (a.fee > b.fee) {
-                return -1;
-            }
-
-            if (a.fee < b.fee) {
-                return 1;
-            }
-
-            return 0;
-        });
-        this.checkPendingBalances();
     }
 
     async onPeeerConnected(peer) {
@@ -190,19 +166,23 @@ class Node {
     }
 
     addBlock(block) {
+        block.transactions.forEach((transaction) => {
+            transaction.minedInBlockIndex = block.index;
+            this.confirmedTransactions = [
+                ...this.confirmedTransactions,
+                transaction
+            ];
+            this.pendingTransactions =
+                this.pendingTransactions.filter((tx) => tx.transactionDataHash !== transaction.transactionDataHash)
+        });
         this.setDifficulty(this.blockchain[this.blockchain.length - 1], block);
         this.blockchain.push(block);
         this.addCumulativeDifficulty(block.difficulty);
         console.log('\x1b[46m%s\x1b[0m', 'New block mined!');
         NewBlock.emit('new_block');
         this.newBlockBalances();
-        block.transactions.forEach((tx) => {
-            tx.minedInBlockIndex = block.index;
-            this.confirmedTransactions = [
-                ...this.confirmedTransactions,
-                tx
-            ];
-        })
+        console.log(this.pendingTransactions.length)
+        this.checkPendingBalances(true);
     }
 
     addCumulativeDifficulty(blockDifficulty) {
@@ -250,7 +230,7 @@ class Node {
         this.addressesKeys.push(addressData.address);
     }
 
-    checkPendingBalances() {
+    checkPendingBalances(message) {
         Object.values(this.addresses).forEach((address) => address.pendingBalance = new BigNumber(0));
         this.pendingTransactions.forEach((tx) => {
             if (!this.addresses[tx.to]) {
@@ -260,6 +240,7 @@ class Node {
 
             if (!this.addresses[tx.to].pendingBalance.isZero()) {
                 this.addresses[tx.to].pendingBalance = this.addresses[tx.to].pendingBalance.plus(new BigNumber(tx.value));
+
             } else {
                 this.addresses[tx.to].pendingBalance = this.addresses[tx.to].confirmedBalance.plus(new BigNumber(tx.value));
             }
@@ -272,10 +253,10 @@ class Node {
         });
     }
 
-    calculateMinerReward() {
+    calculateMinerReward(blockTransactions) {
         let base_reward = new BigNumber(5000000);
         let fees_sum = new BigNumber(0);
-        this.pendingTransactions.forEach(transaction => {
+        blockTransactions.forEach(transaction => {
             fees_sum = fees_sum.plus(transaction.fee);
         });
         return base_reward.plus(fees_sum).toString();
@@ -292,15 +273,16 @@ class Node {
 
     newMiningJob(minerAddress, difficulty) {
         // create candidate
+        let blockTransactions = this.filterTransactions();
         const candidateBlock = new Block(
             this.blockchain.length,
             [
                 Transaction.coinbaseTransaction(
-                    minerAddress, this.calculateMinerReward(),
+                    minerAddress, this.calculateMinerReward(blockTransactions),
                     0,
                     this.blockchain.length
                 ),
-                ...this.filterTransactions(),
+                ...blockTransactions,
             ],
             difficulty || this.currentDifficulty,
             minerAddress,
