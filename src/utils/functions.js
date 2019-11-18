@@ -122,7 +122,7 @@ exports.paginateTransactions = (transactions, paginationObj) => {
     let { current_page, paginate } = paginationObj;
     // if its a node request, just simply returns all the transactions
     if (!paginate && !current_page) {
-        return {transactions};
+        return { transactions };
     }
     // set the variables
     if (!paginate) {
@@ -135,10 +135,10 @@ exports.paginateTransactions = (transactions, paginationObj) => {
     let lastTransactionIndex = paginate * current_page - 1;
     let lastPage = Math.round(transactions.length / paginate);
     let transactionsToSend = {};
-    if (transactions.length > 0) {
-        transactionsToSend = transactions.map((transaction, index) => {
+    if (Object.keys(transactions).length > 0) {
+        Object.keys(transactions).forEach((transactionHash, index) => {
             if (index >= firstTransactionIndex && index <= lastTransactionIndex) {
-                return transaction;
+                return transactionsToSend[transactionHash] = transactions[transactionHash];
             }
         });
     }

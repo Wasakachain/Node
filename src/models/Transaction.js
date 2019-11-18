@@ -117,7 +117,7 @@ class Transaction {
      * @param {Transaction}  transaction
      */
     static dataHash({ from, to, value, fee, dateCreated, data, senderPubKey }) {
-        return sha256(JSON.stringify({
+        return `0x${sha256(JSON.stringify({
             from,
             to,
             value,
@@ -125,7 +125,7 @@ class Transaction {
             dateCreated,
             data,
             senderPubKey,
-        }))
+        }))}`
     }
 
     static genesisTransaction() {
