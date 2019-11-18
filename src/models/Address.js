@@ -19,32 +19,34 @@ class Address {
             addresses[tx.to] = new Address(tx.to)
         }
 
-        if (!addresses[tx.from]) {
+        if (!addresses[tx.from] && !tx.isCoinbase) {
             addresses[tx.from] = new Address(tx.from)
         }
 
         if ((blockchainLength - tx.minedInBlockIndex) > 6) {
             addresses[tx.to].safeBalance = addresses[tx.to].safeBalance.plus(tx.value);
-        } else {
-            addresses[tx.to].confirmedBalance = addresses[tx.to].confirmedBalance.plus(tx.value);
         }
+
+        addresses[tx.to].confirmedBalance = addresses[tx.to].confirmedBalance.plus(tx.value);
 
         const amount = new BigNumber(tx.value + tx.fee);
-        if (addresses[tx.from].safeBalance.comparedTo(amount) < 0) {
 
-            addresses[tx.from].confirmedBalance =
-                addresses[tx.from].confirmedBalance.minus(
-                    amount.minus(addresses[tx.from].safeBalance)
-                );
-            addresses[tx.from].safeBalance = new BigNumber(0);
-        } else {
-            addresses[tx.from].safeBalance = addresses[tx.from].safeBalance.minus(amount);
+        if (!tx.isCoinbase) {
+            addresses[tx.from].confirmedBalance = addresses[tx.from].confirmedBalance.minus(amount);
+
+            if (addresses[tx.from].safeBalance.comparedTo(amount) <= 0) {
+                addresses[tx.from].safeBalance = new BigNumber(0);
+            } else {
+                addresses[tx.from].safeBalance = addresses[tx.from].safeBalance.minus(amount);
+            }
         }
-
     }
 
-    hasFunds(amount) {
-        return (this.safeBalance.plus(this.confirmedBalance)).comparedTo(amount) > 0;
+    hasFunds(amount, pendingTransactions) {
+        if (pendingTransactions.find((tx) => tx.from === this.address)) {
+            return this.confirmedBalance.comparedTo(amount) >= 0 && this.pendingBalance.comparedTo(amount) >= 0;
+        }
+        return this.confirmedBalance.comparedTo(amount) >= 0;
     }
 
     addSafeBalance(value) {

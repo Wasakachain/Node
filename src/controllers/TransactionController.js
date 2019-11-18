@@ -22,7 +22,7 @@ class TransactionController {
     }
 
     static sendTransaction(request, response) {
-        const { transaction } = request.body;
+        const transaction = request.body;
         if (!transaction) {
             return response.status(400).send({ message: 'Transaction data required.' });
         }
@@ -33,6 +33,10 @@ class TransactionController {
         if (error) {
             return response.status(400).send({ message: error, sentTx: transaction });
         }
+        if ([...node.confirmedTransactions, ...node.pendingTransactions].find((tx) => tx.transactionDataHash === transaction.transactionDataHash)) {
+            return response.status(409).send({ message: 'Transaction already exists', sentTx: transaction });
+        }
+
         const tx = new Transaction(
             transaction.from,
             transaction.to,
@@ -44,12 +48,8 @@ class TransactionController {
             null,
             transaction.data
         );
-
-        node.pendingTransactions[tx.transactionDataHash] = tx;
-        node.pendingTransactionsKeys.push(tx.transactionDataHash);
-
+        node.pendingTransactions.push(tx);
         NewTransaction.emit('transaction', tx);
-
         return response.send({ message: 'transaction done!' });
     }
 

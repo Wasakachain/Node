@@ -35,10 +35,8 @@ class Node {
         this.blockchain = [];
 
         // Transactions initialization
-        this.pendingTransactions = {};
-        this.pendingTransactionsKeys = [];
-        this.confirmedTransactions = {};
-        this.confirmedTransactionsKeys = [];
+        this.pendingTransactions = [];
+        this.confirmedTransactions = [];
 
         this.miningJobs = {};
 
@@ -53,12 +51,12 @@ class Node {
         //Create genesis block
         let genesisTransactions = Transaction.genesisTransaction();
         let genesisBlock = new Block(0, [genesisTransactions], 0, '0'.repeat(40), null);
-        genesisBlock.setMinedData(new Date().toISOString(), 0, '0'.repeat(64));
+        genesisBlock.setMinedData('2019-11-14T23:33:03.915Z', 0, '0'.repeat(64));
         this.blockchain.push(genesisBlock);
-        this.confirmedTransactions = {
+        this.confirmedTransactions = [
             ...this.confirmedTransactions,
-            [genesisTransactions.transactionDataHash]: genesisTransactions
-        };
+            genesisTransactions
+        ];
         this.id = `${new Date().toISOString()}${this.blockchain[0].blockHash}`;
         this.newBlockBalances();
 
@@ -72,14 +70,17 @@ class Node {
     }
 
     onNewTransaction(transaction) {
+        this.checkPendingBalances();
+
         Object.keys(this.peers).forEach(peer => {
-            request(`${this.peers[peer]}/transaction/send`, 'POST', transaction)
-                .catch(() => {
+            request(`${this.peers[peer]}/transactions/send`, 'POST', transaction)
+                .catch((error) => {
                     if (!error.status) {
                         delete this.peers[peer];
                     }
                 });
         });
+
     }
 
     onNewBlock() {
@@ -96,42 +97,56 @@ class Node {
     }
 
     async onPeeerConnected(peer) {
-        await this.checkBetterChain(peer);
+        await this.synchronizePeer(peer);
     }
 
     shouldDownloadChain(difficulty) {
-        return difficulty > this.cumulativeDifficulty
-    }
-
-    async checkBetterChain(peer) {
-        let res = await request(`${peer}/info`);
-        if (this.shouldDownloadChain(res.data.cumulativeDifficulty)) {
-            await this.synchronizePeer(peer);
-        }
+        return new BigNumber(difficulty).comparedTo(this.cumulativeDifficulty) > 0;
     }
 
     async synchronizePeer(peer) {
         try {
-            let res = await request(`${peer}/blocks`);
-            if (!this.validateNewChain(res.data)) return;
+            let res = await request(`${peer}/info`);
+            if (this.shouldDownloadChain(res.data.cumulativeDifficulty)) {
+                await this.synchronizeChain(peer);
+            }
+            await this.synchronizeTransactions(peer);
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
+    async synchronizeTransactions(peer) {
+        try {
             let resTxs = await request(`${peer}/transactions/pending`);
-            this.synchronizeTransactions(resTxs.data.transactions);
-            NewBlock.emit('new_block');
+            this.updateTransactions(resTxs.data);
+            console.log('\x1b[43m%s\x1b[0m', `syncronized with ${peer}`)
         } catch (error) {
             console.log(error)
         }
-        console.log('\x1b[43m%s\x1b[0m', `syncronized with ${peer}`)
+    }
+
+    async synchronizeChain(peer) {
+        try {
+            let res = await request(`${peer}/blocks`);
+            if (!this.validateNewChain(res.data)) return;
+            NewBlock.emit('new_block');
+            console.log('\x1b[43m%s\x1b[0m', `syncronized with ${peer}`)
+        } catch (error) {
+            console.log(error)
+        }
     }
 
     validateNewChain(chain) {
         let newBalances = {};
-        for (let i = 1; i < chain.length; i++) {
-            if (!Block.isValid(chain[i])) {
-                return false;
-            }
+        for (let i = 0; i < chain.length; i++) {
             for (let j = 0; j < chain[i].transactions.length; j++) {
                 if (!Transaction.isValid(chain[i].transactions[j])) return false;
                 Address.checkBalances(newBalances, chain[i].transactions[j], chain.length);
+            }
+
+            if (i !== 0 && !Block.isValid(chain[i])) {
+                return false;
             }
         }
         this.addresses = newBalances;
@@ -140,28 +155,34 @@ class Node {
     }
 
     newBlockBalances() {
+        let newBalances = {}
         this.blockchain.forEach((block) => {
             block.transactions.forEach((tx) => {
-                Address.checkBalances(this.addresses, tx, this.blockchain.length);
+                Address.checkBalances(newBalances, tx, this.blockchain.length);
             });
         })
+        this.addresses = newBalances;
         this.addressesKeys = Object.keys(this.addresses);
     }
 
     addBlock(block) {
+        block.transactions.forEach((transaction) => {
+            transaction.minedInBlockIndex = block.index;
+            this.confirmedTransactions = [
+                ...this.confirmedTransactions,
+                transaction
+            ];
+            this.pendingTransactions =
+                this.pendingTransactions.filter((tx) => tx.transactionDataHash !== transaction.transactionDataHash)
+        });
         this.setDifficulty(this.blockchain[this.blockchain.length - 1], block);
         this.blockchain.push(block);
         this.addCumulativeDifficulty(block.difficulty);
         console.log('\x1b[46m%s\x1b[0m', 'New block mined!');
         NewBlock.emit('new_block');
         this.newBlockBalances();
-        block.transactions.forEach((tx) => {
-            this.confirmedTransactions = {
-                ...this.confirmedTransactions,
-                [tx.transactionDataHash]: tx
-            };
-        })
-        this.confirmedTransactionsKeys = Object.keys(this.confirmedTransactions);
+        console.log(this.pendingTransactions.length)
+        this.checkPendingBalances(true);
     }
 
     addCumulativeDifficulty(blockDifficulty) {
@@ -178,12 +199,16 @@ class Node {
         }
     }
 
-    synchronizeTransactions(nodeTransactions) {
-        this.pendingTransactions = [...Object.values(this.pendingTransactions), ...Object.values(nodeTransactions).filter((transaction) => {
-            return !this.pendingTransactions[transaction.transactionDataHash];
-        })];
+    updateTransactions(nodeTransactions) {
+        let newTransactions = {};
+        [...this.pendingTransactions, ...nodeTransactions].forEach((transaction, index) => {
+            if (newTransactions[transaction.transactionDataHash]) {
+                return;
+            }
+            newTransactions[transaction.transactionDataHash] = transaction;
+        });
 
-        this.pendingTransactionsKeys = Object.keys(this.pendingTransactionsKeys);
+        this.pendingTransactions = Object.values(newTransactions);
     }
 
     async registerNode(address) {
@@ -205,26 +230,59 @@ class Node {
         this.addressesKeys.push(addressData.address);
     }
 
-    calculateMinerReward() {
-        let base_reward = 5000000;
-        let fees_sum = 0;
-        this.pendingTransactionsKeys.forEach(transaction => {
-            fees_sum += parseInt(transaction.fee);
+    checkPendingBalances(message) {
+        Object.values(this.addresses).forEach((address) => address.pendingBalance = new BigNumber(0));
+        this.pendingTransactions.forEach((tx) => {
+            if (!this.addresses[tx.to]) {
+                this.addresses[tx.to] =
+                    new Address(tx.to);
+            }
+
+            if (!this.addresses[tx.to].pendingBalance.isZero()) {
+                this.addresses[tx.to].pendingBalance = this.addresses[tx.to].pendingBalance.plus(new BigNumber(tx.value));
+
+            } else {
+                this.addresses[tx.to].pendingBalance = this.addresses[tx.to].confirmedBalance.plus(new BigNumber(tx.value));
+            }
+
+            if (!this.addresses[tx.from].pendingBalance.isZero()) {
+                this.addresses[tx.from].pendingBalance = this.addresses[tx.from].pendingBalance.minus(new BigNumber(tx.value).plus(tx.fee));
+            } else {
+                this.addresses[tx.from].pendingBalance = this.addresses[tx.from].confirmedBalance.minus(new BigNumber(tx.value).plus(tx.fee));
+            }
         });
-        return base_reward + fees_sum;
+    }
+
+    calculateMinerReward(blockTransactions) {
+        let base_reward = new BigNumber(5000000);
+        let fees_sum = new BigNumber(0);
+        blockTransactions.forEach(transaction => {
+            fees_sum = fees_sum.plus(transaction.fee);
+        });
+        return base_reward.plus(fees_sum).toString();
+    }
+
+    filterTransactions() {
+        let transactions = [];
+        this.pendingTransactions.forEach((pTx) => {
+            if (transactions.find((tx) => tx.from === pTx.from)) return;
+            transactions.push(pTx);
+        });
+        return transactions;
     }
 
     newMiningJob(minerAddress, difficulty) {
         // create candidate
+        let blockTransactions = this.filterTransactions();
         const candidateBlock = new Block(
             this.blockchain.length,
             [
                 Transaction.coinbaseTransaction(
-                    minerAddress, this.calculateMinerReward(),
+                    minerAddress, this.calculateMinerReward(blockTransactions),
                     0,
                     this.blockchain.length
                 ),
-                ...Object.values(this.pendingTransactions),
+                ...blockTransactions,
             ],
             difficulty || this.currentDifficulty,
             minerAddress,
@@ -277,8 +335,8 @@ class Node {
         return {
             chainID: this.id,
             cumulativeDifficulty: this.cumulativeDifficulty,
-            confirmedTransactions: this.confirmedTransactionsKeys.length,
-            pendingTransactions: this.pendingTransactionsKeys.length,
+            confirmedTransactions: this.confirmedTransactions.length,
+            pendingTransactions: this.pendingTransactions.length,
             peers: this.peers,
         }
     }

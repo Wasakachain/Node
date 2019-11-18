@@ -1,5 +1,6 @@
 const { sha256, verifySignature } = require('../utils/hash');
 const { isValidAddress } = require('../utils/functions');
+const Address = require('./Address');
 const BigNumber = require('bignumber.js');
 class Transaction {
     /**
@@ -12,8 +13,8 @@ class Transaction {
      * @param {string} senderPubKey sender public key
      * @param {Array} senderSignature sender signature
      * @param {number} minedInBlockIndex index of the block where the transaction will be placed
-     * @param {boolean} transferSuccessful  
      * @param {string} data transaction data
+     * @param {boolean} transferSuccessful  
      */
     constructor(from, to, value, fee, dateCreated, senderPubKey, senderSignature, minedInBlockIndex, data, transferSuccessful = true) {
         this.from = from;
@@ -23,7 +24,7 @@ class Transaction {
         this.dateCreated = isNaN(Date.parse(dateCreated)) ? new Date().toISOString() : dateCreated;
         this.data = data;
         this.senderPubKey = senderPubKey;
-        this.transactionDataHash = Transaction.dataHash({ from, to, value, fee, dateCreated: this.dateCreated, senderPubKey });
+        this.transactionDataHash = Transaction.dataHash({ from, to, value, fee, dateCreated: isNaN(Date.parse(dateCreated)) ? new Date().toISOString() : dateCreated, data, senderPubKey });
         this.senderSignature = senderSignature;
         this.minedInBlockIndex = minedInBlockIndex;
         this.transferSuccessful = transferSuccessful;
@@ -51,7 +52,6 @@ class Transaction {
      */
     static isValid(transaction) {
         //TO DO: COMPLETE THIS METHOD
-
         if (transaction.fee < 10 && !transaction.isCoinbase) {
             return false;
         }
@@ -65,7 +65,6 @@ class Transaction {
         }
 
         return true;
-
     }
 
     /**
@@ -88,9 +87,10 @@ class Transaction {
         if (!Transaction.verifyTransaction(pendingTx)) {
             return 'Transaction signature verification failed.'
         }
-        console.log('1 ', Date.parse(pendingTx.dateCreated) - Date.now());
-        console.log('2 ', Date.now());
-        console.log('4 ', Date.now() > Date.parse(pendingTx.dateCreated));
+
+        if (pendingTx.fee < 10) {
+            return 'The minimum fee is 10'
+        }
 
         if (isNaN(Date.parse(pendingTx.dateCreated)) || Date.parse(node.blockchain[0].dateCreated) >= Date.parse(pendingTx.dateCreated) || (Date.parse(pendingTx.dateCreated) - Date.now()) > 60 * 1000) {
             return 'Invalid creation date.';
@@ -98,15 +98,17 @@ class Transaction {
         if (!node.getAddress(pendingTx.from)) {
             return 'The sender address doesn\'t the funds.';
         }
+
         if (typeof pendingTx.value !== "string") {
             return 'The transaction\'s value must be a string.';
         }
         const value = new BigNumber(pendingTx.value);
         const fee = new BigNumber(pendingTx.fee);
+
         if (value.isNaN() || fee.isNaN() || !value.isInteger() || !fee.isInteger()) {
             return 'The transaction\'s value and fee must be valid integer numbers.';
         }
-        if (!node.getAddress(pendingTx.from).hasFunds(value.plus(fee))) {
+        if (!node.getAddress(pendingTx.from).hasFunds(value.plus(fee), node.pendingTransactions)) {
             return 'The sender address doesn\'t the funds.';
         }
         return false;
@@ -135,9 +137,9 @@ class Transaction {
                 '0000000000000000000000000000000000000000000000000000000000000000',
                 '0000000000000000000000000000000000000000000000000000000000000000'
             ],
-            to = '0x999067568fed3f20dd265413e70f48a060dad93c',
+            to = '0xf88b3515440b9fa31579f53eb750f16380f01801',
             data = 'Genesis tx',
-            value = 1000000000000,
+            value = '1000000000',
             dateCreated = new Date().toISOString();
 
         return {
