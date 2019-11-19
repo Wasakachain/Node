@@ -7,7 +7,8 @@ exports.sha256 = function (data) {
 }
 
 function formatCompressedPubKey(pubKeyCompressed) {
-    return `${pubKeyCompressed.substr(64, 65) === '0' ? '02' : '03'}${pubKeyCompressed.substr(2, 64)}`
+    let pkC = pubKeyCompressed.replace('0x', '');
+    return `${pkC.substr(64, 65) === '0' ? '02' : '03'}${pkC.substr(0, 64)}`
 }
 
 exports.verifySignature = function (data, publicKey, signature) {
