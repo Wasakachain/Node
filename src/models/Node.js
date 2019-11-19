@@ -176,7 +176,9 @@ class Node {
     addBlock(block) {
         block.transactions.forEach((transaction) => {
             transaction.minedInBlockIndex = block.index;
-            transaction.tansferSuccessful = this.addresses[transaction.from].hasFunds(transaction.fee, this.pendingTransactions);
+            if (!transaction.isCoinbase) {
+                transaction.tansferSuccessful = this.addresses[transaction.from].hasFunds(transaction.fee, this.pendingTransactions);
+            }
             this.confirmedTransactions = [
                 ...this.confirmedTransactions,
                 transaction
@@ -202,7 +204,6 @@ class Node {
     }
 
     setDifficulty() {
-
         let average = this.cumulativeBlockTime.dividedBy(this.blockchain.length);
         if (average.comparedTo(10) < 0) {
             this.currentDifficulty++;
@@ -258,7 +259,7 @@ class Node {
 
     filterTransactions() {
         let transactions = [];
-        this.pendingTransactions.forsEach((pTx) => {
+        this.pendingTransactions.forEach((pTx) => {
             if (transactions.find((tx) => tx.from === pTx.from) ||
                 !this.addresses[pTx.from].hasFunds(new BigNumber(pTx.value).plus(pTx.fee))) return;
             pTx.minedInBlockIndex =
@@ -268,7 +269,6 @@ class Node {
     }
 
     newMiningJob(minerAddress, difficulty) {
-        // create candidate
         let blockTransactions = this.filterTransactions();
         const candidateBlock = new Block(
             this.blockchain.length,
