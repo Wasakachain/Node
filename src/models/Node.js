@@ -6,7 +6,7 @@ const Transaction = require('./Transaction');
 const { request, generateNodeId, address, NewPeerConnected, NewBlock, NewTransaction } = require('../utils/functions');
 const Address = require('../models/Address');
 
-const BLOCKS_PER_MINUTE = 1;
+const MINUTES_PER_BLOCK = 1;
 
 class Node {
     constructor() {
@@ -181,7 +181,6 @@ class Node {
         console.log('\x1b[46m%s\x1b[0m', 'New block mined!');
         NewBlock.emit('new_block');
         this.newBlockBalances();
-        console.log(this.pendingTransactions.length)
         this.checkPendingBalances(true);
     }
 
@@ -192,7 +191,7 @@ class Node {
     setDifficulty(prevBlock, newBlock) {
         return 4;
         let difference = moment(newBlock.dateCreated).diff(prevBlock.dateCreated, "minutes");
-        if (difference < BLOCKS_PER_MINUTE) {
+        if (difference < MINUTES_PER_BLOCK) {
             this.currentDifficulty += 1;
         } else {
             this.cumulativeDifficulty -= 1;
@@ -265,7 +264,8 @@ class Node {
     filterTransactions() {
         let transactions = [];
         this.pendingTransactions.forEach((pTx) => {
-            if (transactions.find((tx) => tx.from === pTx.from)) return;
+            if (transactions.find((tx) => tx.from === pTx.from) ||
+                !this.addresses[pTx.from].hasFunds(new BigNumber(pTx.value).plus(pTx.fee))) return;
             transactions.push(pTx);
         });
         return transactions;
