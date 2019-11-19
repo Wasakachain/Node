@@ -15,35 +15,37 @@ class Address {
      * @param {number} blockchainLength blockchain length
      */
     static checkBalances(addresses, tx, blockchainLength) {
-        if (!addresses[tx.to]) {
-            addresses[tx.to] = new Address(tx.to)
+        const to = tx.to.replace('0x', '');
+        const from = tx.from.replace('0x', '');
+        if (!addresses[to]) {
+            addresses[to] = new Address(to)
         }
 
-        if (!addresses[tx.from] && !tx.isCoinbase) {
-            addresses[tx.from] = new Address(tx.from)
+        if (!addresses[from] && !tx.isCoinbase) {
+            addresses[from] = new Address(from)
         }
 
         if ((blockchainLength - tx.minedInBlockIndex) > 6) {
-            addresses[tx.to].safeBalance = addresses[tx.to].safeBalance.plus(tx.value);
+            addresses[to].safeBalance = addresses[to].safeBalance.plus(tx.value);
         }
 
-        addresses[tx.to].confirmedBalance = addresses[tx.to].confirmedBalance.plus(tx.value);
+        addresses[to].confirmedBalance = addresses[to].confirmedBalance.plus(tx.value);
 
         const amount = new BigNumber(tx.value + tx.fee);
 
         if (!tx.isCoinbase) {
-            addresses[tx.from].confirmedBalance = addresses[tx.from].confirmedBalance.minus(amount);
+            addresses[from].confirmedBalance = addresses[from].confirmedBalance.minus(amount);
 
-            if (addresses[tx.from].safeBalance.comparedTo(amount) <= 0) {
-                addresses[tx.from].safeBalance = new BigNumber(0);
+            if (addresses[from].safeBalance.comparedTo(amount) <= 0) {
+                addresses[from].safeBalance = new BigNumber(0);
             } else {
-                addresses[tx.from].safeBalance = addresses[tx.from].safeBalance.minus(amount);
+                addresses[from].safeBalance = addresses[from].safeBalance.minus(amount);
             }
         }
     }
 
     hasFunds(amount, pendingTransactions) {
-        if (pendingTransactions.find((tx) => tx.from === this.address)) {
+        if (pendingTransactions.find((tx) => tx.from.replace('0x', '') === this.address)) {
             return this.confirmedBalance.comparedTo(amount) >= 0 && this.pendingBalance.comparedTo(amount) >= 0;
         }
         return this.confirmedBalance.comparedTo(amount) >= 0;
@@ -73,6 +75,13 @@ class Address {
         this.pendingBalance = this.pendingBalance.minus(value);
     }
 
+    getBalance() {
+        return {
+            safeBalance: this.safeBalance.toString(),
+            confirmedBalance: this.confirmedBalance.toString(),
+            pendingBalance: this.pendingBalance.toString(),
+        }
+    }
 }
 
 module.exports = Address;

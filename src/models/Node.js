@@ -219,35 +219,26 @@ class Node {
         } catch (error) { }
     }
 
-    addAddress(addressData) {
-        this.addresses[addressData.address] = {
-            address: addressData.address,
-            safeBalance: 0,
-            confirmedBalance: 0,
-            pendingBalance: 0
-        };
-        this.addressesKeys.push(addressData.address);
-    }
-
     checkPendingBalances(message) {
         Object.values(this.addresses).forEach((address) => address.pendingBalance = new BigNumber(0));
         this.pendingTransactions.forEach((tx) => {
-            if (!this.addresses[tx.to]) {
-                this.addresses[tx.to] =
-                    new Address(tx.to);
+            const to = tx.to.replace('0x', 0);
+            const from = tx.from.replace('0x', 0);
+            if (!this.addresses[to]) {
+                this.addresses[to] = new Address(to);
             }
 
-            if (!this.addresses[tx.to].pendingBalance.isZero()) {
-                this.addresses[tx.to].pendingBalance = this.addresses[tx.to].pendingBalance.plus(new BigNumber(tx.value));
+            if (!this.addresses[to].pendingBalance.isZero()) {
+                this.addresses[to].pendingBalance = this.addresses[to].pendingBalance.plus(new BigNumber(tx.value));
 
             } else {
-                this.addresses[tx.to].pendingBalance = this.addresses[tx.to].confirmedBalance.plus(new BigNumber(tx.value));
+                this.addresses[to].pendingBalance = this.addresses[to].confirmedBalance.plus(new BigNumber(tx.value));
             }
 
-            if (!this.addresses[tx.from].pendingBalance.isZero()) {
-                this.addresses[tx.from].pendingBalance = this.addresses[tx.from].pendingBalance.minus(new BigNumber(tx.value).plus(tx.fee));
+            if (!this.addresses[from].pendingBalance.isZero()) {
+                this.addresses[from].pendingBalance = this.addresses[from].pendingBalance.minus(new BigNumber(tx.value).plus(tx.fee));
             } else {
-                this.addresses[tx.from].pendingBalance = this.addresses[tx.from].confirmedBalance.minus(new BigNumber(tx.value).plus(tx.fee));
+                this.addresses[from].pendingBalance = this.addresses[from].confirmedBalance.minus(new BigNumber(tx.value).plus(tx.fee));
             }
         });
     }
@@ -263,9 +254,9 @@ class Node {
 
     filterTransactions() {
         let transactions = [];
-        this.pendingTransactions.forEach((pTx) => {
+        this.pendingTransactions.forsEach((pTx) => {
             if (transactions.find((tx) => tx.from === pTx.from) ||
-                !this.addresses[pTx.from].hasFunds(new BigNumber(pTx.value).plus(pTx.fee))) return;
+                !this.addresses[pTx.from.replace('0x', '')].hasFunds(new BigNumber(pTx.value).plus(pTx.fee))) return;
             transactions.push(pTx);
         });
         return transactions;
@@ -365,8 +356,9 @@ class Node {
     }
 
     getAddress(address) {
-        if (this.addresses[address]) {
-            return this.addresses[address];
+        const cleanAddress = address.replace('0x', '');
+        if (this.addresses[cleanAddress]) {
+            return this.addresses[cleanAddress];
         }
         else {
             return false;
