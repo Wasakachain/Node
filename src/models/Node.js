@@ -19,6 +19,7 @@ class Node {
         // Peers initialization
         this.peers = {};
 
+
         this.onPeeerConnected = this.onPeeerConnected.bind(this);
         this.onNewBlock = this.onNewBlock.bind(this);
         this.onNewTransaction = this.onNewTransaction.bind(this);
@@ -43,6 +44,8 @@ class Node {
         // Addresses initialization
         this.addresses = {};
         this.addressesKeys = [];
+
+        this.cumulativeBlockTime = new BigNumber(0);
 
         // Difficulty initialization
         this.currentDifficulty = process.env.difficulty || 4;
@@ -139,6 +142,8 @@ class Node {
 
     validateNewChain(chain) {
         let newBalances = {};
+        this.cumulativeBlockTime = new BigNumber(0);
+
         for (let i = 0; i < chain.length; i++) {
             for (let j = 0; j < chain[i].transactions.length; j++) {
                 if (!Transaction.isValid(chain[i].transactions[j])) return false;
@@ -148,9 +153,14 @@ class Node {
             if (i !== 0 && !Block.isValid(chain[i])) {
                 return false;
             }
+
+            if (i !== 2) {
+                this.cumulativeBlockTime = this.cumulativeBlockTime.plus(moment(chain[i].dateCreated).diff(chain[i - 1].dateCreated, 'second'));
+            }
         }
         this.addresses = newBalances;
         this.blockchain = chain;
+        this.setDifficulty()
         return true;
     }
 
@@ -175,7 +185,11 @@ class Node {
             this.pendingTransactions =
                 this.pendingTransactions.filter((tx) => tx.transactionDataHash !== transaction.transactionDataHash)
         });
-        this.setDifficulty(this.blockchain[this.blockchain.length - 1], block);
+        if (block.index > 1) {
+            this.cumulativeBlockTime = this.cumulativeBlockTime.plus(moment(block.dateCreated).diff(this.blockchain[block.index - 1].dateCreated, 'seconds'));
+            this.setDifficulty();
+        }
+
         this.blockchain.push(block);
         this.addCumulativeDifficulty(block.difficulty);
         console.log('\x1b[46m%s\x1b[0m', 'New block mined!');
@@ -185,16 +199,16 @@ class Node {
     }
 
     addCumulativeDifficulty(blockDifficulty) {
-        this.cumulativeDifficulty += Math.pow(16, blockDifficulty)
+        this.cumulativeDifficulty = this.cumulativeDifficulty.plus(new BigNumber(16).pow(blockDifficulty))
     }
 
-    setDifficulty(prevBlock, newBlock) {
-        return 4;
-        let difference = moment(newBlock.dateCreated).diff(prevBlock.dateCreated, "minutes");
-        if (difference < MINUTES_PER_BLOCK) {
-            this.currentDifficulty += 1;
-        } else {
-            this.cumulativeDifficulty -= 1;
+    setDifficulty() {
+
+        let average = this.cumulativeBlockTime.dividedBy(this.blockchain.length);
+        if (average.comparedTo(5) < 0) {
+            this.currentDifficulty++;
+        } else if (this.currentDifficulty > 1) {
+            this.currentDifficulty--;
         }
     }
 
@@ -219,35 +233,26 @@ class Node {
         } catch (error) { }
     }
 
-    addAddress(addressData) {
-        this.addresses[addressData.address] = {
-            address: addressData.address,
-            safeBalance: 0,
-            confirmedBalance: 0,
-            pendingBalance: 0
-        };
-        this.addressesKeys.push(addressData.address);
-    }
-
     checkPendingBalances(message) {
         Object.values(this.addresses).forEach((address) => address.pendingBalance = new BigNumber(0));
         this.pendingTransactions.forEach((tx) => {
-            if (!this.addresses[tx.to]) {
-                this.addresses[tx.to] =
-                    new Address(tx.to);
+            const to = tx.to.replace('0x', 0);
+            const from = tx.from.replace('0x', 0);
+            if (!this.addresses[to]) {
+                this.addresses[to] = new Address(to);
             }
 
-            if (!this.addresses[tx.to].pendingBalance.isZero()) {
-                this.addresses[tx.to].pendingBalance = this.addresses[tx.to].pendingBalance.plus(new BigNumber(tx.value));
+            if (!this.addresses[to].pendingBalance.isZero()) {
+                this.addresses[to].pendingBalance = this.addresses[to].pendingBalance.plus(new BigNumber(tx.value));
 
             } else {
-                this.addresses[tx.to].pendingBalance = this.addresses[tx.to].confirmedBalance.plus(new BigNumber(tx.value));
+                this.addresses[to].pendingBalance = this.addresses[to].confirmedBalance.plus(new BigNumber(tx.value));
             }
 
-            if (!this.addresses[tx.from].pendingBalance.isZero()) {
-                this.addresses[tx.from].pendingBalance = this.addresses[tx.from].pendingBalance.minus(new BigNumber(tx.value).plus(tx.fee));
+            if (!this.addresses[from].pendingBalance.isZero()) {
+                this.addresses[from].pendingBalance = this.addresses[from].pendingBalance.minus(new BigNumber(tx.value).plus(tx.fee));
             } else {
-                this.addresses[tx.from].pendingBalance = this.addresses[tx.from].confirmedBalance.minus(new BigNumber(tx.value).plus(tx.fee));
+                this.addresses[from].pendingBalance = this.addresses[from].confirmedBalance.minus(new BigNumber(tx.value).plus(tx.fee));
             }
         });
     }
@@ -263,9 +268,9 @@ class Node {
 
     filterTransactions() {
         let transactions = [];
-        this.pendingTransactions.forEach((pTx) => {
+        this.pendingTransactions.forsEach((pTx) => {
             if (transactions.find((tx) => tx.from === pTx.from) ||
-                !this.addresses[pTx.from].hasFunds(new BigNumber(pTx.value).plus(pTx.fee))) return;
+                !this.addresses[pTx.from.replace('0x', '')].hasFunds(new BigNumber(pTx.value).plus(pTx.fee))) return;
             transactions.push(pTx);
         });
         return transactions;
@@ -292,9 +297,9 @@ class Node {
 
         return {
             index: this.blockchain.length,
-            transactionsIncluded: this.pendingTransactions.length,
+            transactionsIncluded: candidateBlock.transactions.length,
             difficulty: this.currentDifficulty,
-            expectedReward: process.env.reward || 1,
+            expectedReward: this.calculateMinerReward(candidateBlock.transactions),
             rewardAddress: minerAddress,
             blockDataHash: candidateBlock.blockDataHash,
         };
@@ -334,6 +339,7 @@ class Node {
     getGeneralInfo() {
         return {
             chainID: this.id,
+            currentDifficulty: this.currentDifficulty,
             cumulativeDifficulty: this.cumulativeDifficulty,
             confirmedTransactions: this.confirmedTransactions.length,
             pendingTransactions: this.pendingTransactions.length,
@@ -365,8 +371,9 @@ class Node {
     }
 
     getAddress(address) {
-        if (this.addresses[address]) {
-            return this.addresses[address];
+        const cleanAddress = address.replace('0x', '');
+        if (this.addresses[cleanAddress]) {
+            return this.addresses[cleanAddress];
         }
         else {
             return false;

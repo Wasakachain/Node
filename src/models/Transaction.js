@@ -35,7 +35,7 @@ class Transaction {
      * @returns {boolean}
      */
     static verifyTransaction(transaction) {
-        return verifySignature(transaction.transactionDataHash, transaction.senderPubKey, transaction.senderSignature);
+        return verifySignature(transaction.transactionDataHash.replace('0x', ''), transaction.senderPubKey, transaction.senderSignature);
     }
 
     /**
@@ -43,7 +43,7 @@ class Transaction {
      * @returns {boolean}
      */
     verify() {
-        return verifySignature(this.transactionDataHash, this.senderPubKey, this.senderSignature);
+        return verifySignature(this.transactionDataHash.replace('0x', ''), this.senderPubKey, this.senderSignature);
     }
 
     /**
@@ -78,7 +78,7 @@ class Transaction {
         if (!isValidAddress(pendingTx.from)) {
             return 'Invalid "from" address.';
         }
-        if (Transaction.dataHash(pendingTx) !== pendingTx.transactionDataHash) {
+        if (Transaction.dataHash(pendingTx).replace('0x', '') !== pendingTx.transactionDataHash.replace('0x', '')) {
             return 'Invalid transaction hash.';
         }
         if (!Array.isArray(pendingTx.senderSignature) || pendingTx.senderSignature.length !== 2) {
