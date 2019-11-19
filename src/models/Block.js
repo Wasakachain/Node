@@ -1,5 +1,5 @@
 const { sha256 } = require('../utils/hash')
-
+const Transaction = require('./Transaction');
 class Block {
     constructor(index, transactions, difficulty, minedBy, prevBlockHash) {
         this.index = index;
@@ -7,13 +7,24 @@ class Block {
         this.difficulty = typeof difficulty === 'string' ? parseInt(difficulty, 10) : difficulty;
         this.minedBy = minedBy;
         this.prevBlockHash = prevBlockHash;
-        this.blockDataHash = sha256(JSON.stringify({ index, transactions, difficulty, prevBlockHash, minedBy }));
+        this.blockDataHash = sha256(JSON.stringify({ index, transactions: this.getTransactionsToHash(transactions), difficulty, prevBlockHash, minedBy }));
+    }
+
+    getTransactionsToHash(transactions) {
+        return transactions.map((tx) => {
+            return Transaction.getDataForHash(tx);
+        })
     }
 
     setMinedData(dateCreated, nonce, blockHash) {
         this.dateCreated = dateCreated;
         this.nonce = parseInt(nonce, 10);
         this.blockHash = blockHash;
+    }
+
+    static __validDataHash(block) {
+        const { index, transactions, difficulty, prevBlockHash, minedBy } = block;
+        return sha256(JSON.stringify({ index, transactions: this.getTransactionsToHash(transactions), difficulty, prevBlockHash, minedBy })) == block.blockDataHash;
     }
 
     static __validProof(block) {
@@ -25,8 +36,7 @@ class Block {
     }
 
     static isValid(block) {
-        // TO DO: COMPLETE METHOD
-        if ((!block.index || !block.difficulty || !block.prevBlockHash || !block.minedBy || !block.blockDataHash || !block.blockDataHash || !block.nonce || !block.dateCreated || !block.blockHash) || !Block.__validProof(block) || !Block.__validHash(block)) {
+        if ((!block.index || !block.difficulty || !block.prevBlockHash || !block.minedBy || !block.blockDataHash || !block.blockDataHash || !block.nonce || !block.dateCreated || !block.blockHash) || !Block.__validProof(block) || !Block.__validHash(block) || Block.__validDataHash(block)) {
             return false;
         }
         return true;

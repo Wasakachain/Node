@@ -6,8 +6,6 @@ const Transaction = require('./Transaction');
 const { request, generateNodeId, address, NewPeerConnected, NewBlock, NewTransaction } = require('../utils/functions');
 const Address = require('../models/Address');
 
-const MINUTES_PER_BLOCK = 1;
-
 class Node {
     constructor() {
         // Create node ID
@@ -178,6 +176,7 @@ class Node {
     addBlock(block) {
         block.transactions.forEach((transaction) => {
             transaction.minedInBlockIndex = block.index;
+            transaction.tansferSuccessful = this.addresses[transaction.from].hasFunds(transaction.fee, this.pendingTransactions);
             this.confirmedTransactions = [
                 ...this.confirmedTransactions,
                 transaction
@@ -205,7 +204,7 @@ class Node {
     setDifficulty() {
 
         let average = this.cumulativeBlockTime.dividedBy(this.blockchain.length);
-        if (average.comparedTo(5) < 0) {
+        if (average.comparedTo(10) < 0) {
             this.currentDifficulty++;
         } else if (this.currentDifficulty > 1) {
             this.currentDifficulty--;
@@ -214,7 +213,7 @@ class Node {
 
     updateTransactions(nodeTransactions) {
         let newTransactions = {};
-        [...this.pendingTransactions, ...nodeTransactions].forEach((transaction, index) => {
+        [...this.pendingTransactions, ...nodeTransactions].forEach((transaction) => {
             if (newTransactions[transaction.transactionDataHash]) {
                 return;
             }
@@ -222,15 +221,6 @@ class Node {
         });
 
         this.pendingTransactions = Object.values(newTransactions);
-    }
-
-    async registerNode(address) {
-        try {
-            const res = await request(`${address}/info`);
-            if (res) {
-                this.peers.push(address);
-            }
-        } catch (error) { }
     }
 
     checkPendingBalances(message) {
@@ -270,8 +260,9 @@ class Node {
         let transactions = [];
         this.pendingTransactions.forsEach((pTx) => {
             if (transactions.find((tx) => tx.from === pTx.from) ||
-                !this.addresses[pTx.from.replace('0x', '')].hasFunds(new BigNumber(pTx.value).plus(pTx.fee))) return;
-            transactions.push(pTx);
+                !this.addresses[pTx.from].hasFunds(new BigNumber(pTx.value).plus(pTx.fee))) return;
+            pTx.minedInBlockIndex =
+                transactions.push(pTx);
         });
         return transactions;
     }
