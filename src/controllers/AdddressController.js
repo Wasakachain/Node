@@ -8,8 +8,13 @@ class AddressController {
         }
         return response.status(404).send({ message: 'No Addresses Found' })
     }
+
     static addressBalance(req, response) {
-        return response.send({ message: `this is the address ${req.params.address} balance` });
+        const { address } = req.params;
+        if (node.getAddress(address)) {
+            return response.json({ data: node.getAddress(address) });
+        }
+        return response.status(404).send({ message: `No balance found for address ${address}` });
     }
 
     static addressTransactions(req, response) {
@@ -22,7 +27,7 @@ class AddressController {
             return response.status(404).send({ address, message: 'No transactions found for address' });
         }
 
-        return response.send({ transactions });
+        return response.send({ address, transactions });
     }
 }
 

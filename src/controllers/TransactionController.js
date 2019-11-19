@@ -55,7 +55,7 @@ class TransactionController {
 
     static show(req, res) {
         const { hash } = req.params;
-        const {responseFormat} = req.query;
+        const { responseFormat } = req.query;
         let regex_0x = new RegExp("^0x", "i");
         let hashToFind = '';
         if (regex_0x.test(hash)) {
@@ -69,10 +69,10 @@ class TransactionController {
                 .json({ message: 'Invalid transaction hash' })
         }
         let transaction = '';
-        if (node.pendingTransactionsKeys.length) {
+        if (node.pendingTransactions.length) {
             transaction = [
-                ...Object.values(node.confirmedTransactions),
-                ...Object.values(node.pendingTransactions),
+                ...node.confirmedTransactions,
+                ...node.pendingTransactions,
             ].find(txn => txn.transactionDataHash === hashToFind)
         } else {
             transaction = [
@@ -81,8 +81,8 @@ class TransactionController {
         }
 
         if (transaction) {
-            if (responseFormat){
-                return res.status(200).send({transaction})
+            if (responseFormat) {
+                return res.status(200).send({ transaction })
             }
             return res.status(200).json(transaction)
         }

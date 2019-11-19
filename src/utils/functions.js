@@ -100,14 +100,12 @@ exports.paginateBlocks = (blocks, paginationObj) => {
     if (!current_page) {
         current_page = 1
     }
-    let firstBlockIndex = current_page - 1;
-    let lastBlockIndex = paginate * current_page - 1;
     let lastPage = Math.round(blocks.length / paginate);
-    let blocksToSend = blocks.map((block, index) => {
-        if (index >= firstBlockIndex && index <= lastBlockIndex) {
-            return block;
-        }
-    });
+    let blocksToSend = [];
+    blocks = blocks.length > paginate ? blocks.splice(-(current_page * paginate), paginate) : blocks;
+    for (let index = blocks.length - 1; index >= 0; index--) {
+        blocksToSend[index] = blocks[index];
+    }
     return {
         blocks: blocksToSend,
         currentPage: current_page,
@@ -124,23 +122,20 @@ exports.paginateTransactions = (transactions, paginationObj) => {
     if (!paginate && !current_page) {
         return { transactions };
     }
+
+
     // set the variables
-    if (!paginate) {
-        paginate = 20;
-    }
-    if (!current_page) {
-        current_page = 1
-    }
-    let firstTransactionIndex = current_page - 1;
-    let lastTransactionIndex = paginate * current_page - 1;
+    paginate = paginate ? parseInt(paginate) : 10;
+    current_page = current_page ? parseInt(current_page) : 1;
+    let length = transactions.length;
     let lastPage = Math.round(transactions.length / paginate);
     let transactionsToSend = {};
-    if (Object.keys(transactions).length > 0) {
-        Object.keys(transactions).forEach((transactionHash, index) => {
-            if (index >= firstTransactionIndex && index <= lastTransactionIndex) {
-                return transactionsToSend[transactionHash] = transactions[transactionHash];
-            }
-        });
+    if (transactions.length > 0) {
+        transactions = transactions.length > paginate ? transactions.splice(-(current_page * paginate), paginate) : transactions;
+        for (let index = transactions.length - 1; index >= 0; index--) {
+            let { transactionDataHash } = transactions[index];
+            transactionsToSend[transactionDataHash] = transactions[index];
+        }
     }
     return {
         transactions: transactionsToSend,
@@ -148,7 +143,7 @@ exports.paginateTransactions = (transactions, paginationObj) => {
         nextPage: current_page < lastPage ? current_page + 1 : null,
         lastPage: lastPage !== 0 ? lastPage : 1,
         transactionsPerPage: paginate,
-        totalTransactions: transactions.length
+        totalTransactions: length
     };
 }
 

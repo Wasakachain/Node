@@ -387,12 +387,14 @@ class Node {
     getAddressesSafeBalances() {
         let addresses = this.getAddresses();
         if (addresses) {
-            return addresses.filter(({ confirmedBalance }) => confirmedBalance !== 0)
-                .map(({ address, safeBalance }) => {
-                    return {
-                        [address]: safeBalance
-                    };
-                });
+            let addressWithConfirmedBalance = {};
+            Object.keys(addresses).forEach(addressHash => {
+                let { confirmedBalance } = addresses[addressHash];
+                if (parseInt(confirmedBalance) !== 0) {
+                    addressWithConfirmedBalance[addressHash] = { confirmedBalance: parseInt(confirmedBalance) };
+                }
+            })
+            return addressWithConfirmedBalance ? addressWithConfirmedBalance : null;
         }
         return null;
     }
