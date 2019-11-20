@@ -7,7 +7,7 @@ class TransactionController {
         const { responseFormat, paginate } = request.query;
         if (responseFormat) {
             return res.send({
-                confirmed: paginateTransactions(node.confirmedTransactions, { current_page: 1, paginate }),
+                confirmed: paginateTransactions(node.confirmedTransactions(), { current_page: 1, paginate }),
                 pending: paginateTransactions(node.pendingTransactions, { current_page: 1, paginate })
             });
         }
@@ -15,7 +15,7 @@ class TransactionController {
             message: 'this are all the transactions',
             transactions: [
                 ...node.pendingTransactions,
-                ...node.confirmedTransactions
+                ...node.confirmedTransactions()
             ]
         });
     }
