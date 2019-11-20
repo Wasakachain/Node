@@ -17,7 +17,6 @@ class Node {
         // Peers initialization
         this.peers = {};
 
-
         this.onPeeerConnected = this.onPeeerConnected.bind(this);
         this.onNewBlock = this.onNewBlock.bind(this);
         this.onNewTransaction = this.onNewTransaction.bind(this);
@@ -72,7 +71,6 @@ class Node {
 
     onNewTransaction(transaction) {
         this.checkPendingBalances();
-
         Object.keys(this.peers).forEach(peer => {
             request(`${this.peers[peer]}/transactions/send`, 'POST', transaction)
                 .catch((error) => {
@@ -196,7 +194,7 @@ class Node {
         console.log('\x1b[46m%s\x1b[0m', 'New block mined!');
         NewBlock.emit('new_block');
         this.newBlockBalances();
-        this.checkPendingBalances(true);
+        this.checkPendingBalances();
     }
 
     addCumulativeDifficulty(blockDifficulty) {
@@ -224,7 +222,7 @@ class Node {
         this.pendingTransactions = Object.values(newTransactions);
     }
 
-    checkPendingBalances(message) {
+    checkPendingBalances() {
         Object.values(this.addresses).forEach((address) => address.pendingBalance = new BigNumber(0));
         this.pendingTransactions.forEach((tx) => {
             const to = tx.to.replace('0x', 0);

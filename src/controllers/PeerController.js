@@ -43,7 +43,10 @@ class PeerController {
     }
 
     static blockNotification(req, response) {
-        const { cumulativeDifficulty, nodeUrl } = req.body;
+        const { cumulativeDifficulty = 0, nodeUrl } = req.body;
+        if (!/^((http[s]?):\/)?\/?([^:\/\s]+)((\/\w+)*\/)([\w\-\.]+[^#?\s]+)(.*)?(#[\w\-]+)?$/.test(nodeUrl)) {
+            return response.status(400).send({ errorMsg: 'Invalid url' });
+        }
         if (node.shouldDownloadChain(cumulativeDifficulty)) {
             node.synchronizeChain(nodeUrl);
         }
