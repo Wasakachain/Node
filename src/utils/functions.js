@@ -129,7 +129,7 @@ exports.paginateBlocks = (blocks, paginationObj) => {
         blocksToSend[index] = blocks[index];
     }
     return {
-        blocks: blocksToSend,
+        blocks: blocks,
         currentPage: current_page,
         nextPage: current_page < lastPage ? current_page + 1 : null,
         lastPage: lastPage !== 0 ? lastPage : 1,

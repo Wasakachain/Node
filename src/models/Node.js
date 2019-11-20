@@ -80,7 +80,7 @@ class Node {
                     if (!error.status) {
                         delete this.peers[peer];
                     }
-                });
+                })
         });
 
     }
@@ -143,10 +143,17 @@ class Node {
         let newBalances = {};
         let newCumulativeDifficulty = new BigNumber(0)
         let newCumulativeBlockTime = new BigNumber(0)
+
         for (let i = 0; i < chain.length; i++) {
             for (let j = 0; j < chain[i].transactions.length; j++) {
                 if (!Transaction.isValid(chain[i].transactions[j])) return false;
                 Address.checkBalances(newBalances, chain[i].transactions[j], chain.length);
+
+                let index = this.pendingTransactions.findIndex((tx) => tx.transactionDataHash === chain[i].transactions[j].transactionDataHash)
+
+                if (index >= 0) {
+                    this.pendingTransactions.splice(index, 1)
+                }
             }
 
             if (i !== 0 && !Block.isValid(chain[i])) {
@@ -181,7 +188,7 @@ class Node {
         block.transactions.forEach((transaction) => {
             transaction.minedInBlockIndex = block.index;
             if (!transaction.isCoinbase) {
-                transaction.tansferSuccessful = this.addresses[transaction.from].hasFunds(transaction.fee, this.pendingTransactions);
+                transaction.transferSuccessful = this.addresses[transaction.from].hasFunds(transaction.fee, this.pendingTransactions);
             }
             this.pendingTransactions =
                 this.pendingTransactions.filter((tx) => tx.transactionDataHash !== transaction.transactionDataHash)
@@ -194,9 +201,10 @@ class Node {
         this.blockchain.push(block);
 
         console.log('\x1b[46m%s\x1b[0m', 'New block mined!');
-        NewBlock.emit('new_block');
         this.newBlockBalances();
         this.checkPendingBalances();
+
+        NewBlock.emit('new_block');
     }
 
     addCumulativeDifficulty(block) {
@@ -204,6 +212,8 @@ class Node {
     }
 
     setDifficulty() {
+        this.currentDifficulty = 5;
+        return;
         let average = this.cumulativeBlockTime.dividedBy(this.blockchain.length);
         if (average.comparedTo(10) < 0) {
             this.currentDifficulty++;

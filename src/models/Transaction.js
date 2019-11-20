@@ -168,6 +168,7 @@ class Transaction {
             }),
             senderSignature,
             minedInBlockIndex: 0,
+            transferSuccessful: true,
             isCoinbase: true
         }
     }
@@ -202,6 +203,7 @@ class Transaction {
             }),
             senderSignature,
             minedInBlockIndex,
+            transferSuccessful: true,
             isCoinbase: true
         }
     }

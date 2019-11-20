@@ -36,7 +36,6 @@ class PeerController {
 
                 return response.send({ message: `Connected to peer: ${peerUrl}` })
             }
-
             console.log('\x1b[46m%s\x1b[0m', `Connection to peer ${peerUrl} failed`);
             return response.status(400).send(error)
         }
@@ -46,6 +45,7 @@ class PeerController {
         const { cumulativeDifficulty = 0, nodeUrl } = req.body;
         if (node.shouldDownloadChain(cumulativeDifficulty)) {
             node.synchronizeChain(nodeUrl);
+            node.synchronizeTransactions(nodeUrl);
         }
         return response.send({ message: 'Thank you for the notification' });
     }
