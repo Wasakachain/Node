@@ -30,7 +30,7 @@ class TransactionController {
     static confirmedTransactions(req, response) {
         const { current_page, paginate } = req.query;
         return response.send(
-            paginateTransactions(node.confirmedTransactions, { current_page, paginate })
+            paginateTransactions(node.confirmedTransactions(), { current_page, paginate })
         );
     }
 
@@ -49,7 +49,7 @@ class TransactionController {
             return response.status(400).send({ message: error, sentTx: transaction });
         }
 
-        if ([...node.confirmedTransactions, ...node.pendingTransactions].find((tx) => tx.transactionDataHash === transaction.transactionDataHash)) {
+        if ([...node.confirmedTransactions(), ...node.pendingTransactions].find((tx) => tx.transactionDataHash === transaction.transactionDataHash)) {
             return response.status(409).send({ message: 'Transaction already exists', sentTx: transaction });
         }
 
@@ -87,12 +87,12 @@ class TransactionController {
         let transaction = '';
         if (node.pendingTransactions.length) {
             transaction = [
-                ...node.confirmedTransactions,
+                ...node.confirmedTransactions(),
                 ...node.pendingTransactions,
             ].find(txn => txn.transactionDataHash === hashToFind)
         } else {
             transaction = [
-                ...Object.values(node.confirmedTransactions)
+                ...Object.values(node.confirmedTransactions())
             ].find(txn => txn.transactionDataHash === hashToFind)
         }
 

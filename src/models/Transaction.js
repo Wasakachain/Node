@@ -22,7 +22,7 @@ class Transaction {
         this.value = value;
         this.fee = fee;
         this.dateCreated = isNaN(Date.parse(dateCreated)) ? new Date().toISOString() : dateCreated;
-        this.data = data;
+        this.data = data ? data : undefined;
         this.senderPubKey = senderPubKey;
         this.transactionDataHash = Transaction.dataHash({ from, to, value, fee, dateCreated: isNaN(Date.parse(dateCreated)) ? new Date().toISOString() : dateCreated, data, senderPubKey });
         this.senderSignature = senderSignature;
@@ -48,7 +48,7 @@ class Transaction {
      * @returns {boolean}
      */
     static verifyTransaction(transaction) {
-        return verifySignature(transaction.transactionDataHash.replace('0x', ''), transaction.senderPubKey, transaction.senderSignature);
+        return verifySignature(transaction.transactionDataHash, transaction.senderPubKey, transaction.senderSignature);
     }
 
     /**
@@ -56,7 +56,7 @@ class Transaction {
      * @returns {boolean}
      */
     verify() {
-        return verifySignature(this.transactionDataHash.replace('0x', ''), this.senderPubKey, this.senderSignature);
+        return verifySignature(this.transactionDataHash, this.senderPubKey, this.senderSignature);
     }
 
     /**
@@ -132,13 +132,13 @@ class Transaction {
      * @param {Transaction}  transaction
      */
     static dataHash({ from, to, value, fee, dateCreated, data, senderPubKey }) {
-        return `0x${sha256(JSON.stringify({
+        return `${sha256(JSON.stringify({
             from,
             to,
             value,
             fee,
             dateCreated,
-            data,
+            data: data ? data : undefined,
             senderPubKey,
         }))}`
     }
@@ -150,7 +150,7 @@ class Transaction {
                 '0000000000000000000000000000000000000000000000000000000000000000',
                 '0000000000000000000000000000000000000000000000000000000000000000'
             ],
-            to = '0xa56d702089d9b284a5ca6c6c2fa32fbd1660e73a',
+            to = '46e4b6b30d37763f4d07432d524bcfa6b8db23a4',
             data = 'Genesis tx',
             value = '1000000000',
             dateCreated = new Date().toISOString();
