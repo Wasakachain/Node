@@ -261,7 +261,7 @@ class Node {
         let transactions = [];
         this.pendingTransactions.forEach((pTx) => {
             if (transactions.find((tx) => tx.from === pTx.from) ||
-                !this.addresses[pTx.from].hasFunds(new BigNumber(pTx.value).plus(pTx.fee))) return;
+                !this.addresses[pTx.from].hasFunds(new BigNumber(pTx.value).plus(pTx.fee), this.pendingTransactions)) return;
             pTx.minedInBlockIndex =
                 transactions.push(pTx);
         });

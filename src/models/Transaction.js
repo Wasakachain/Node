@@ -48,7 +48,7 @@ class Transaction {
      * @returns {boolean}
      */
     static verifyTransaction(transaction) {
-        return verifySignature(transaction.transactionDataHash.replace('0x', ''), transaction.senderPubKey, transaction.senderSignature);
+        return verifySignature(transaction.transactionDataHash, transaction.senderPubKey, transaction.senderSignature);
     }
 
     /**
@@ -56,7 +56,7 @@ class Transaction {
      * @returns {boolean}
      */
     verify() {
-        return verifySignature(this.transactionDataHash.replace('0x', ''), this.senderPubKey, this.senderSignature);
+        return verifySignature(this.transactionDataHash, this.senderPubKey, this.senderSignature);
     }
 
     /**
@@ -150,7 +150,7 @@ class Transaction {
                 '0000000000000000000000000000000000000000000000000000000000000000',
                 '0000000000000000000000000000000000000000000000000000000000000000'
             ],
-            to = 'f88b3515440b9fa31579f53eb750f16380f01801',
+            to = '46e4b6b30d37763f4d07432d524bcfa6b8db23a4',
             data = 'Genesis tx',
             value = '1000000000',
             dateCreated = new Date().toISOString();
