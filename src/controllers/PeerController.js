@@ -46,6 +46,7 @@ class PeerController {
         const { cumulativeDifficulty = 0, nodeUrl } = req.body;
         if (node.shouldDownloadChain(cumulativeDifficulty)) {
             node.synchronizeChain(nodeUrl);
+            node.synchronizeTransactions(nodeUrl);
         }
         return response.send({ message: 'Thank you for the notification' });
     }

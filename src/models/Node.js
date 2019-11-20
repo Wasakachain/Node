@@ -80,7 +80,7 @@ class Node {
                     if (!error.status) {
                         delete this.peers[peer];
                     }
-                });
+                })
         });
 
     }
