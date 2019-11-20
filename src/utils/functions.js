@@ -136,8 +136,6 @@ exports.paginateTransactions = (transactions, paginationObj) => {
     if (!paginate && !current_page) {
         return { transactions };
     }
-
-
     // set the variables
     paginate = paginate ? parseInt(paginate) : 10;
     current_page = current_page ? parseInt(current_page) : 1;
