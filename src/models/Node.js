@@ -85,7 +85,7 @@ class Node {
     onNewBlock() {
         Object.keys(this.peers).forEach(peer => {
             request(`${this.peers[peer]}/peers/notify-new-block`, 'POST', {
-                cumulativeDifficulty: this.cumulativeDifficulty,
+                cumulativeDifficulty: this.cumulativeDifficulty.toString(),
                 nodeUrl: address()
             }).catch((error) => {
                 if (!error.status) {
@@ -118,7 +118,7 @@ class Node {
     async synchronizeTransactions(peer) {
         try {
             let resTxs = await request(`${peer}/transactions/pending`);
-            this.updateTransactions(resTxs.data);
+            this.updateTransactions(resTxs.data.transactions);
             console.log('\x1b[43m%s\x1b[0m', `syncronized with ${peer}`)
         } catch (error) {
             console.log(error)
@@ -138,24 +138,30 @@ class Node {
 
     validateNewChain(chain) {
         let newBalances = {};
-        this.cumulativeBlockTime = new BigNumber(0);
-
+        let newCumulativeDifficulty = new BigNumber(0)
+        let newCumulativeBlockTime = new BigNumber(0)
+        let newConfirmedTransactions = []
         for (let i = 0; i < chain.length; i++) {
             for (let j = 0; j < chain[i].transactions.length; j++) {
                 if (!Transaction.isValid(chain[i].transactions[j])) return false;
                 Address.checkBalances(newBalances, chain[i].transactions[j], chain.length);
+                newConfirmedTransactions.push(chain[i].transactions[j]);
             }
 
             if (i !== 0 && !Block.isValid(chain[i])) {
                 return false;
             }
 
-            if (i !== 2) {
-                this.cumulativeBlockTime = this.cumulativeBlockTime.plus(moment(chain[i].dateCreated).diff(chain[i - 1].dateCreated, 'second'));
+            if (i >= 2) {
+                newCumulativeBlockTime = newCumulativeBlockTime.plus(moment(chain[i].dateCreated).diff(chain[i - 1].dateCreated, 'second'));
             }
+            newCumulativeDifficulty.plus(new BigNumber(16).pow(chain[i].difficulty))
         }
         this.addresses = newBalances;
         this.blockchain = chain;
+        this.cumulativeBlockTime = newCumulativeBlockTime;
+        this.cumulativeDifficulty = newCumulativeDifficulty;
+        this.confirmedTransactions = newConfirmedTransactions;
         this.setDifficulty()
         return true;
     }
@@ -188,17 +194,17 @@ class Node {
             this.cumulativeBlockTime = this.cumulativeBlockTime.plus(moment(block.dateCreated).diff(this.blockchain[block.index - 1].dateCreated, 'seconds'));
             this.setDifficulty();
         }
-
+        this.addCumulativeDifficulty(block)
         this.blockchain.push(block);
-        this.addCumulativeDifficulty(block.difficulty);
+
         console.log('\x1b[46m%s\x1b[0m', 'New block mined!');
         NewBlock.emit('new_block');
         this.newBlockBalances();
         this.checkPendingBalances();
     }
 
-    addCumulativeDifficulty(blockDifficulty) {
-        this.cumulativeDifficulty = this.cumulativeDifficulty.plus(new BigNumber(16).pow(blockDifficulty))
+    addCumulativeDifficulty(block) {
+        this.cumulativeDifficulty = this.cumulativeDifficulty.plus(new BigNumber(16).pow(block.difficulty))
     }
 
     setDifficulty() {
@@ -329,7 +335,7 @@ class Node {
         return {
             chainID: this.id,
             currentDifficulty: this.currentDifficulty,
-            cumulativeDifficulty: this.cumulativeDifficulty,
+            cumulativeDifficulty: this.cumulativeDifficulty.toString(),
             confirmedTransactions: this.confirmedTransactions.length,
             pendingTransactions: this.pendingTransactions.length,
             peers: this.peers,
@@ -343,7 +349,7 @@ class Node {
             chain: {
                 chainID: this.id,
                 blocks: this.blockchain,
-                cumulativeDifficulty: this.cumulativeDifficulty,
+                cumulativeDifficulty: this.cumulativeDifficulty.toString(),
             },
             pendingTransactions: this.pendingTransactions,
             confirmedBalances: this.getConfirmedBalances()
