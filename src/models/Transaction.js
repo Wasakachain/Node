@@ -30,6 +30,19 @@ class Transaction {
         this.transferSuccessful = transferSuccessful;
     }
 
+    static getDataForHash(tx) {
+        const { from, to, value, fee, dateCreated, data, senderPubKey } = tx
+        return {
+            from,
+            to,
+            value,
+            fee,
+            dateCreated,
+            data,
+            senderPubKey,
+        }
+    }
+
     /**
      * returns true when the transaction has a valid signature
      * @returns {boolean}

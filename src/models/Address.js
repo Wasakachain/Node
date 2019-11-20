@@ -25,23 +25,26 @@ class Address {
             addresses[from] = new Address(from)
         }
 
-        if ((blockchainLength - tx.minedInBlockIndex) > 6) {
-            addresses[to].safeBalance = addresses[to].safeBalance.plus(tx.value);
+        if (!tx.transferSuccessful && !tx.isCoinbase) {
+            const amount = new BigNumber(tx.fee);
+            addresses[from].confirmedBalance = addresses[from].confirmedBalance.minus(amount);
+            return
         }
 
-        addresses[to].confirmedBalance = addresses[to].confirmedBalance.plus(tx.value);
-
-        const amount = new BigNumber(tx.value + tx.fee);
-
         if (!tx.isCoinbase) {
-            addresses[from].confirmedBalance = addresses[from].confirmedBalance.minus(amount);
-
+            const amount = new BigNumber(tx.value + tx.fee);
             if (addresses[from].safeBalance.comparedTo(amount) <= 0) {
                 addresses[from].safeBalance = new BigNumber(0);
             } else {
                 addresses[from].safeBalance = addresses[from].safeBalance.minus(amount);
             }
         }
+
+        if ((blockchainLength - tx.minedInBlockIndex) > 6) {
+            addresses[to].safeBalance = addresses[to].safeBalance.plus(tx.value);
+        }
+
+        addresses[to].confirmedBalance = addresses[to].confirmedBalance.plus(tx.value);
     }
 
     hasFunds(amount, pendingTransactions) {

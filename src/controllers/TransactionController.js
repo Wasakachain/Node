@@ -26,13 +26,16 @@ class TransactionController {
         if (!transaction) {
             return response.status(400).send({ message: 'Transaction data required.' });
         }
-        if (!transaction.from || !transaction.to || !transaction.value || !transaction.fee || !transaction.senderPubKey || !transaction.senderSignature) {
+        if (!transaction.from || !transaction.to || !transaction.value || !transaction.fee || !transaction.senderPubKey || !transaction.senderSignature || !transaction.transactionDataHash) {
             return response.status(400).send({ message: 'Transaction data missing.', sentTx: transaction });
         }
+
         const error = Transaction.isInvalidPendingTx(transaction, node);
+
         if (error) {
             return response.status(400).send({ message: error, sentTx: transaction });
         }
+
         if ([...node.confirmedTransactions, ...node.pendingTransactions].find((tx) => tx.transactionDataHash === transaction.transactionDataHash)) {
             return response.status(409).send({ message: 'Transaction already exists', sentTx: transaction });
         }

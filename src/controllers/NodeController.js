@@ -1,6 +1,5 @@
 const { node } = require('../../index');
-const { request, NewBlock } = require('../utils/functions');
-const CandidateBlock = require('../models/BlockCandidate');
+const { minerThread } = require('../utils/functions');
 
 class NodeController {
     static nodeIndex(_, response) {
@@ -19,16 +18,7 @@ class NodeController {
 
     static async debugMine(req, response) {
         const { minerAddress, difficulty } = req.params;
-        let block = new CandidateBlock(node.newMiningJob(minerAddress, difficulty));
-        const minedBlock = await block.mine();
-        block = node.miningJobs[minedBlock.blockDataHash]
-        block.setMinedData(minedBlock.dateCreated, minedBlock.nonce, minedBlock.blockHash);
-        node.setDifficulty(node.blockchain[node.blockchain.length - 1], block);
-        node.blockchain.push(block);
-        node.addCumulativeDifficulty(block.difficulty);
-        console.log('\x1b[46m%s\x1b[0m', 'New block mined!');
-        NewBlock.emit('new_block');
-        return response.send({ message: 'New block mined!', block });
+        return minerThread(req, response, { candidateBlock: node.newMiningJob(minerAddress, difficulty) });
     }
 }
 

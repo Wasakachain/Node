@@ -4,10 +4,14 @@ const { paginateBlocks } = require('../utils/functions');
 
 class BlockController {
     static receiveBlock(req, response) {
-        const { blockDataHash = '', dateCreated, nonce, blockHash } = req.body;
+        const { blockDataHash = '', dateCreated = '', nonce = 0, blockHash = '' } = req.body;
         let block = node.miningJobs[blockDataHash]
         if (!block) {
             return response.status(404).send({ errorMsg: 'Block not found or already mined' });
+        }
+
+        if (isNaN(Date.parse(dateCreated)) || Date.parse(node.blockchain[0].dateCreated) >= Date.parse(dateCreated) || (Date.parse(dateCreated) - Date.now()) > 60 * 1000) {
+            return 'Invalid creation date.';
         }
 
         block.setMinedData(dateCreated, nonce, blockHash);

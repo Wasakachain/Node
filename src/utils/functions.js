@@ -5,12 +5,26 @@ const querystring = require('querystring');
 const ip = require('ip');
 const crypto = require('crypto');
 const uuidv4 = require('uuid/v4');
+const { Worker } = require('worker_threads');
 
 const events = require('events');
 
 exports.NewPeerConnected = new events.EventEmitter();
 exports.NewBlock = new events.EventEmitter();
 exports.NewTransaction = new events.EventEmitter();
+
+exports.minerThread = function (req, res, workerData) {
+    return new Promise((resolve, reject) => {
+        const worker = new Worker(__dirname + '/minerDebug.js', { workerData, env: { port: '4444' } });
+        worker.on('message', resolve);
+        worker.on('error', reject);
+        worker.on('exit', (code) => {
+            if (code !== 0)
+                reject(new Error(`Worker stopped with exit code ${code}`));
+            return resolve(res.send({ message: 'New block mined!' }))
+        })
+    });
+}
 
 function setHeaders(data) {
     let header = {
