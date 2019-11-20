@@ -84,6 +84,14 @@ exports.isValidAddress = function (address) {
         return false;
 }
 
+exports.isValidTransactionHash = function (address) {
+    const unprefixedTranasaction = address.replace(/^0x/, '');
+    if (/^([A-Fa-f0-9]{64})$/.test(unprefixedTranasaction))
+        return unprefixedTranasaction;
+    else
+        return false;
+}
+
 exports.generateNodeId = () => {
     return crypto
         .createHash('sha256')

@@ -1,6 +1,6 @@
 const { node } = require('../../index');
 const Transaction = require('../models/Transaction');
-const { NewTransaction, paginateTransactions } = require('../utils/functions');
+const { NewTransaction, paginateTransactions, isValidTransactionHash } = require('../utils/functions');
 
 class TransactionController {
     static transactionIndex(request, res) {
@@ -72,37 +72,29 @@ class TransactionController {
     static show(req, res) {
         const { hash } = req.params;
         const { responseFormat } = req.query;
-        let regex_0x = new RegExp("^0x", "i");
-        let hashToFind = '';
-        if (regex_0x.test(hash)) {
-            hashToFind = hash;
-        } else {
-            hashToFind = `0x${hash}`;
-        }
-        if (!/^0x([A-Fa-f0-9]{64})$/.test(hashToFind)) {
+        if (!isValidTransactionHash(hash)) {
             return res
                 .status(400)
                 .json({ message: 'Invalid transaction hash' })
         }
-        let transaction = '';
+        let hashToFind = isValidTransactionHash(hash);
+        let transaction = [];
         if (node.pendingTransactions.length) {
             transaction = [
                 ...node.confirmedTransactions(),
-                ...node.pendingTransactions,
+                ...Object.values(node.pendingTransactions),
             ].find(txn => txn.transactionDataHash === hashToFind)
         } else {
             transaction = [
                 ...Object.values(node.confirmedTransactions())
             ].find(txn => txn.transactionDataHash === hashToFind)
         }
-
         if (transaction) {
             if (responseFormat) {
                 return res.status(200).send({ transaction })
             }
             return res.status(200).json(transaction)
         }
-
         return res
             .status(404)
             .json({ message: 'Transaction not found' })
