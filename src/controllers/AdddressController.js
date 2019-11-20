@@ -19,12 +19,9 @@ class AddressController {
 
     static addressTransactions(req, response) {
         let { address } = req.params;
-        if (!transactions.length > 0) {
-            return response.status(404).send({ address, message: 'No transactions found for address' });
-        }
         if (isValidAddress(address)) {
             address = isValidAddress(address);
-            let transactions = [...node.confirmedTransactions, ...node.pendingTransactions]
+            let transactions = [...node.confirmedTransactions(), ...node.pendingTransactions]
                 .filter((transaction) => transaction.from === address || transaction.to === address);
             if (!transactions.length > 0) {
                 return response.status(404).send({ address, message: 'No transactions found for address' });
