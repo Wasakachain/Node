@@ -156,7 +156,7 @@ class Node {
             if (i >= 2) {
                 newCumulativeBlockTime = newCumulativeBlockTime.plus(moment(chain[i].dateCreated).diff(chain[i - 1].dateCreated, 'second'));
             }
-            newCumulativeDifficulty.plus(new BigNumber(16).pow(chain[i].difficulty))
+            newCumulativeDifficulty = newCumulativeDifficulty.plus(new BigNumber(16).pow(chain[i].difficulty))
         }
         this.addresses = newBalances;
         this.blockchain = chain;
