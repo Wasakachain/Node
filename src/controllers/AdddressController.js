@@ -20,7 +20,7 @@ class AddressController {
     static addressTransactions(req, response) {
         const { address } = req.params;
 
-        let transactions = [...node.confirmedTransactions, ...node.pendingTransactions]
+        let transactions = [...node.confirmedTransactions(), ...node.pendingTransactions]
             .filter((transaction) => transaction.from === address || transaction.to === address);
 
         if (!transactions.length > 0) {
