@@ -3,8 +3,21 @@ const Transaction = require('../models/Transaction');
 const { NewTransaction, paginateTransactions } = require('../utils/functions');
 
 class TransactionController {
-    static transactionIndex(_, res) {
-        return res.send({ message: 'this are all the transactions' });
+    static transactionIndex(request, res) {
+        const { responseFormat, paginate } = request.query;
+        if (responseFormat) {
+            return res.send({
+                confirmed: paginateTransactions(node.confirmedTransactions, { current_page: 1, paginate }),
+                pending: paginateTransactions(node.pendingTransactions, { current_page: 1, paginate })
+            });
+        }
+        return res.send({
+            message: 'this are all the transactions',
+            transactions: [
+                ...node.pendingTransactions,
+                ...node.confirmedTransactions
+            ]
+        });
     }
 
     static pendingTransactions(req, response) {
