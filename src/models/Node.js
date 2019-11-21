@@ -188,7 +188,7 @@ class Node {
         block.transactions.forEach((transaction) => {
             transaction.minedInBlockIndex = block.index;
             if (!transaction.isCoinbase) {
-                transaction.tansferSuccessful = this.addresses[transaction.from].hasFunds(transaction.fee, this.pendingTransactions);
+                transaction.transferSuccessful = this.addresses[transaction.from].hasFunds(transaction.fee, this.pendingTransactions);
             }
             this.pendingTransactions =
                 this.pendingTransactions.filter((tx) => tx.transactionDataHash !== transaction.transactionDataHash)
