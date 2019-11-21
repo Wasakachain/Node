@@ -124,12 +124,14 @@ exports.paginateBlocks = (blocks, paginationObj) => {
     }
     let lastPage = Math.round(blocks.length / paginate);
     let blocksToSend = [];
+    let responseIndex = 0;
     blocks = blocks.length > paginate ? blocks.splice(-(current_page * paginate), paginate) : blocks;
     for (let index = blocks.length - 1; index >= 0; index--) {
-        blocksToSend[index] = blocks[index];
+        blocksToSend[responseIndex] = blocks[index];
+        responseIndex++;
     }
     return {
-        blocks: blocks,
+        blocks: blocksToSend,
         currentPage: current_page,
         nextPage: current_page < lastPage ? current_page + 1 : null,
         lastPage: lastPage !== 0 ? lastPage : 1,
