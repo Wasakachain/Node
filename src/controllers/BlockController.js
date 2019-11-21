@@ -11,7 +11,7 @@ class BlockController {
         }
 
         if (isNaN(Date.parse(dateCreated)) || Date.parse(node.blockchain[0].dateCreated) >= Date.parse(dateCreated) || (Date.parse(dateCreated) - Date.now()) > 60 * 1000) {
-            return 'Invalid creation date.';
+            return response.status(400).send({ errorMsg: 'Invalid creation date.' });
         }
 
         block.setMinedData(dateCreated, nonce, blockHash);

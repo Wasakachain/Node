@@ -42,7 +42,7 @@ class BlockCandidate {
             while (!this.validProof()) {
                 this.nonce++;
             }
-            resolve({
+            return resolve({
                 blockDataHash: this.blockDataHash,
                 dateCreated: this.dateCreated,
                 nonce: this.nonce,
