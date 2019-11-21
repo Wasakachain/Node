@@ -14,6 +14,7 @@ Router.get('/debug/mine/:minerAddress/:difficulty', NodeController.debugMine);
 // balances routes
 Router.get('/balances', AddressController.balances); //done
 Router.get('/address/:address/balance', AddressController.addressBalance);
+Router.post('/addresses/balance', AddressController.addressBalances);
 Router.get('/address/:address/transactions', AddressController.addressTransactions); //done
 // mining routes
 Router.get('/mining/get-mining-job/:minerAddress', BlockController.createMiningJob);
