@@ -125,6 +125,7 @@ exports.paginateBlocks = (blocks, paginationObj) => {
     let lastPage = Math.round(blocks.length / paginate);
     let blocksToSend = [];
     let responseIndex = 0;
+    let count = blocks.length;
     blocks = blocks.length > paginate ? blocks.splice(-(current_page * paginate), paginate) : blocks;
     for (let index = blocks.length - 1; index >= 0; index--) {
         blocksToSend[responseIndex] = blocks[index];
@@ -136,7 +137,7 @@ exports.paginateBlocks = (blocks, paginationObj) => {
         nextPage: current_page < lastPage ? current_page + 1 : null,
         lastPage: lastPage !== 0 ? lastPage : 1,
         blocksPerPage: paginate,
-        totalBlocks: blocks.length
+        totalBlocks: count
     };
 }
 
