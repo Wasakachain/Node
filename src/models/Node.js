@@ -3,6 +3,7 @@ const { BigNumber } = require('bignumber.js');
 const moment = require('moment');
 const Block = require('./Block');
 const Transaction = require('./Transaction');
+const { sha256 } = require('../utils/hash');
 const { request, generateNodeId, address, NewPeerConnected, NewBlock, NewTransaction } = require('../utils/functions');
 const Address = require('../models/Address');
 
@@ -50,9 +51,10 @@ class Node {
         //Create genesis block
         let genesisTransactions = Transaction.genesisTransaction();
         let genesisBlock = new Block(0, [genesisTransactions], 0, '0'.repeat(40), null);
-        genesisBlock.setMinedData('2019-11-14T23:33:03.915Z', 0, '0'.repeat(64));
+        genesisBlock.setMinedData('2019-11-14T23:33:03.915Z', 0,
+            sha256(JSON.stringify({ blockDataHash: genesisBlock.blockDataHash, dateCreated: '2019-11-14T23:33:03.915Z', nonce: 0 })));
         this.blockchain.push(genesisBlock);
-        this.id = `${new Date().toISOString()}${this.blockchain[0].blockHash}`;
+        this.chainId = this.blockchain[0].blockHash;
         this.newBlockBalances();
 
     }
@@ -67,9 +69,13 @@ class Node {
     confirmedTransactions() {
         let confirmedTransactions = [];
         this.blockchain.forEach((block) => {
-            confirmedTransactions = [...confirmedTransactions, ...block.transactions]
+            confirmedTransactions.push(...block.transactions)
         })
         return confirmedTransactions;
+    }
+
+    allTransactions() {
+        return this.confirmedTransactions().concat(this.pendingTransactions);
     }
 
     onNewTransaction(transaction) {
@@ -212,8 +218,6 @@ class Node {
     }
 
     setDifficulty() {
-        this.currentDifficulty = 5;
-        return;
         let average = this.cumulativeBlockTime.dividedBy(this.blockchain.length);
         if (average.comparedTo(10) < 0) {
             this.currentDifficulty++;
@@ -339,7 +343,7 @@ class Node {
 
     getGeneralInfo() {
         return {
-            chainID: this.id,
+            chainID: this.chainId,
             currentDifficulty: this.currentDifficulty,
             cumulativeDifficulty: this.cumulativeDifficulty.toString(),
             confirmedTransactions: this.confirmedTransactions().length,
@@ -353,7 +357,7 @@ class Node {
             peers: this.peers,
             balances: this.addresses,
             chain: {
-                chainID: this.id,
+                chainID: this.chainId,
                 blocks: this.blockchain,
                 cumulativeDifficulty: this.cumulativeDifficulty.toString(),
             },

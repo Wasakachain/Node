@@ -18,7 +18,6 @@ class BlockController {
         if (!Block.isValid(block)) {
             return response.status(400).send({ errorMsg: 'Invalid block' });
         }
-
         node.miningJobs = {};
         node.addBlock(block)
         return response.send({ message: `Block accepted, reward paid: ${block.transactions[0].value}` });
