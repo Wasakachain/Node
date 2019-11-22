@@ -12,7 +12,6 @@ class PeerController {
         if (!peerUrl) {
             return response.status(400).send({ errorMsg: 'peerUrl is required' });
         }
-
         try {
             let res = await request(`${peerUrl}/info`, 'GET');
             if (node.peers[res.data.nodeID]) {
@@ -20,6 +19,10 @@ class PeerController {
             }
             if (res.data.nodeID === node.nodeID) {
                 return response.status(400).send({ errorMsg: 'Invalid peer url' })
+            }
+
+            if (res.data.chainID !== node.chainId) {
+                return response.status(400).send({ errorMsg: 'Chain ID not match' })
             }
 
             node.peers[res.data.nodeID] = peerUrl;

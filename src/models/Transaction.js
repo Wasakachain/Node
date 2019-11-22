@@ -153,7 +153,7 @@ class Transaction {
             to = 'a56d702089d9b284a5ca6c6c2fa32fbd1660e73a',
             data = 'Genesis tx',
             value = '1000000000',
-            dateCreated = new Date().toISOString();
+            dateCreated = '2019-11-14T23:33:03.915Z';
 
         return {
             from,

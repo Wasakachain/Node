@@ -13,7 +13,7 @@ class NodeController {
     }
 
     static resetChain(req, response) {
-        node.generateWasakaChain();
+        node.createGenesis();
         return response.send({ message: 'The chain was reset to its genesis block' });
     }
 
