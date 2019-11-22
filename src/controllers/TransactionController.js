@@ -72,29 +72,23 @@ class TransactionController {
     static show(req, res) {
         const { hash } = req.params;
         const { responseFormat } = req.query;
-        if (!isValidTransactionHash(hash)) {
+        let hashToFind = isValidTransactionHash(hash);
+
+        if (!hashToFind) {
             return res
                 .status(400)
                 .json({ message: 'Invalid transaction hash' })
         }
-        let hashToFind = isValidTransactionHash(hash);
-        let transaction = [];
-        if (node.pendingTransactions.length) {
-            transaction = [
-                ...node.confirmedTransactions(),
-                ...Object.values(node.pendingTransactions),
-            ].find(txn => txn.transactionDataHash === hashToFind)
-        } else {
-            transaction = [
-                ...Object.values(node.confirmedTransactions())
-            ].find(txn => txn.transactionDataHash === hashToFind)
-        }
+
+        let transaction = node.allTransactions().find(txn => txn.transactionDataHash === hashToFind)
+
         if (transaction) {
             if (responseFormat) {
                 return res.status(200).send({ transaction })
             }
             return res.status(200).json(transaction)
         }
+
         return res
             .status(404)
             .json({ message: 'Transaction not found' })
