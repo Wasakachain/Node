@@ -6,7 +6,9 @@ const Transaction = require('./Transaction');
 const { sha256 } = require('../utils/hash');
 const { request, generateNodeId, address, NewPeerConnected, NewBlock, NewTransaction } = require('../utils/functions');
 const Address = require('../models/Address');
-
+/**
+ * Represent the blochcain node 
+ */
 class Node {
     constructor() {
         // Create node ID
@@ -28,6 +30,9 @@ class Node {
         NewTransaction.addListener('transaction', this.onNewTransaction);
     }
 
+    /**
+     * Initialize the blockchain and its attributes
+     */
     createGenesis() {
         // Blockchain attributes
         // blockchain initialization
@@ -59,6 +64,9 @@ class Node {
 
     }
 
+    /**
+     * iterates over the entire blockchain to calculate the cumulative difficulty
+     */
     setCumulativeDifficulty() {
         this.cumulativeDifficulty = new BigNumber(0);
         this.blockchain.forEach((block) => {
@@ -66,6 +74,10 @@ class Node {
         });
     }
 
+    /**
+     * Returns all the confirmed transactions
+     * @returns {Transaction[]}
+     */
     confirmedTransactions() {
         let confirmedTransactions = [];
         this.blockchain.forEach((block) => {
@@ -74,6 +86,10 @@ class Node {
         return confirmedTransactions;
     }
 
+    /**
+     * returns an array with confirmed and pending transactions
+     * @returns {Transaction[]}
+     */
     allTransactions() {
         return this.confirmedTransactions().concat(this.pendingTransactions);
     }
@@ -108,10 +124,18 @@ class Node {
         await this.synchronizePeer(peer);
     }
 
+    /**
+     * Returns true when given cumulative difficulty is greater than curent cumulative difficulty
+     * @param {number|string} difficulty 
+     */
     shouldDownloadChain(difficulty) {
         return new BigNumber(difficulty).comparedTo(this.cumulativeDifficulty) > 0;
     }
 
+    /**
+     * Synchronize with given peer
+     * @param {string} peer url of the peer to connect
+     */
     async synchronizePeer(peer) {
         try {
             let res = await request(`${peer}/info`);
@@ -124,6 +148,10 @@ class Node {
         }
     }
 
+    /**
+     * Synchronize pending transactions with the given peer
+     * @param {string} peer url of the peer to get transactions
+     */
     async synchronizeTransactions(peer) {
         try {
             let resTxs = await request(`${peer}/transactions/pending`);
@@ -134,6 +162,10 @@ class Node {
         }
     }
 
+    /**
+     * Synchronize the blockchain with the given peer
+     * @param {string} peer url of the peer
+     */
     async synchronizeChain(peer) {
         try {
             let res = await request(`${peer}/blocks`);
