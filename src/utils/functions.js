@@ -119,7 +119,7 @@ exports.paginateBlocks = (blocks, paginationObj) => {
     return {
         blocks: blocksToSend,
         currentPage: current_page,
-        nextPage: current_page < lastPage ? current_page + 1 : null,
+        nextPage: current_page < lastPage ? parseInt(current_page) + 1 : null,
         lastPage: lastPage !== 0 ? lastPage : 1,
         blocksPerPage: paginate,
         totalBlocks: count
@@ -148,7 +148,7 @@ exports.paginateTransactions = (transactions, paginationObj) => {
     return {
         transactions: transactionsToSend,
         currentPage: current_page,
-        nextPage: current_page < lastPage ? current_page + 1 : null,
+        nextPage: current_page < lastPage ? parseInt(current_page) + 1 : null,
         lastPage: lastPage !== 0 ? lastPage : 1,
         transactionsPerPage: paginate,
         totalTransactions: length
