@@ -306,8 +306,10 @@ class Node {
     filterTransactions() {
         let transactions = [];
         this.pendingTransactions.forEach((pTx) => {
-            if (transactions.find((tx) => tx.from === pTx.from) ||
-                !this.addresses[pTx.from].hasFunds(new BigNumber(pTx.value).plus(pTx.fee), this.pendingTransactions)) return;
+            if (
+                transactions.find((tx) => tx.from.replace('0x', '') === pTx.from.replace('0x', '')) ||
+                !this.addresses[pTx.from].hasFunds(new BigNumber(pTx.value).plus(pTx.fee), this.pendingTransactions)
+            ) return;
             pTx.minedInBlockIndex =
                 transactions.push(pTx);
         });
@@ -316,6 +318,7 @@ class Node {
 
     newMiningJob(minerAddress, difficulty) {
         let blockTransactions = this.filterTransactions();
+        console.log(blockTransactions)
         const candidateBlock = new Block(
             this.blockchain.length,
             [

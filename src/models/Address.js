@@ -32,12 +32,13 @@ class Address {
         }
 
         if (!tx.isCoinbase) {
-            const amount = new BigNumber(tx.value + tx.fee);
+            const amount = new BigNumber(tx.value).plus(tx.fee);
             if (addresses[from].safeBalance.comparedTo(amount) <= 0) {
                 addresses[from].safeBalance = new BigNumber(0);
             } else {
                 addresses[from].safeBalance = addresses[from].safeBalance.minus(amount);
             }
+            addresses[from].confirmedBalance = addresses[from].confirmedBalance.minus(amount)
         }
 
         if ((blockchainLength - tx.minedInBlockIndex) > 6) {

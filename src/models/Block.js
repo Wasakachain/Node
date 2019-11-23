@@ -18,7 +18,7 @@ class Block {
 
     setMinedData(dateCreated, nonce, blockHash) {
         this.dateCreated = dateCreated;
-        this.nonce = parseInt(nonce, 10);
+        this.nonce = nonce;
         this.blockHash = blockHash;
     }
 
