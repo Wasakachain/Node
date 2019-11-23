@@ -109,7 +109,7 @@ class Transaction {
             return 'Invalid creation date.';
         }
         if (!node.getAddress(pendingTx.from)) {
-            return 'The sender address doesn\'t the funds.';
+            return 'The sender address doesn\'t have enough funds.';
         }
 
         if (typeof pendingTx.value !== "string") {
