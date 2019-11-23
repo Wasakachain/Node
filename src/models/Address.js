@@ -49,9 +49,10 @@ class Address {
     }
 
     hasFunds(amount, pendingTransactions) {
-        if (pendingTransactions.find((tx) => tx.from.replace('0x', '') === this.address)) {
-            return this.confirmedBalance.comparedTo(amount) >= 0 && this.pendingBalance.comparedTo(amount) >= 0;
-        }
+        // if (pendingTransactions.find((tx) => tx.from.replace('0x', '') === this.address)) {
+        //     return this.confirmedBalance.comparedTo(amount) >= 0;
+        //     //  && this.pendingBalance.comparedTo(amount) >= 0;
+        // }
         return this.confirmedBalance.comparedTo(amount) >= 0;
     }
 

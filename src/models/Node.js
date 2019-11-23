@@ -50,7 +50,7 @@ class Node {
         this.cumulativeBlockTime = new BigNumber(0);
 
         // Difficulty initialization
-        this.currentDifficulty = process.env.difficulty || 4;
+        this.currentDifficulty = process.env.difficulty || 5;
         this.setCumulativeDifficulty();
 
         //Create genesis block
@@ -226,7 +226,7 @@ class Node {
         block.transactions.forEach((transaction) => {
             transaction.minedInBlockIndex = block.index;
             if (!transaction.isCoinbase) {
-                transaction.transferSuccessful = this.addresses[transaction.from].hasFunds(transaction.fee, this.pendingTransactions);
+                transaction.transferSuccessful = this.addresses[transaction.from].hasFunds(new BigNumber(transaction.fee).plus(transaction.value));
             }
             this.pendingTransactions =
                 this.pendingTransactions.filter((tx) => tx.transactionDataHash !== transaction.transactionDataHash)
@@ -241,7 +241,7 @@ class Node {
         console.log('\x1b[46m%s\x1b[0m', 'New block mined!');
         this.newBlockBalances();
         this.checkPendingBalances();
-
+        this.sortPendingTransactions()
         NewBlock.emit('new_block');
     }
 
@@ -250,6 +250,7 @@ class Node {
     }
 
     setDifficulty() {
+        return
         let average = this.cumulativeBlockTime.dividedBy(this.blockchain.length);
         if (average.comparedTo(10) < 0) {
             this.currentDifficulty++;
@@ -303,12 +304,29 @@ class Node {
         return base_reward.plus(fees_sum).toString();
     }
 
+    sortPendingTransactions() {
+        this.pendingTransactions = this.pendingTransactions.map((tx) => {
+            if (this.addresses[tx.from].hasFunds(tx.fee)) {
+                return tx
+            }
+        });
+        this.pendingTransactions.sort((a, b) => {
+            if (a.fee > b.fee) {
+                return 1
+            }
+            if (a.fee < b.fee) {
+                return -1
+            }
+            return 0;
+        })
+    }
+
     filterTransactions() {
         let transactions = [];
         this.pendingTransactions.forEach((pTx) => {
             if (
                 transactions.find((tx) => tx.from.replace('0x', '') === pTx.from.replace('0x', '')) ||
-                !this.addresses[pTx.from].hasFunds(new BigNumber(pTx.value).plus(pTx.fee), this.pendingTransactions)
+                !this.addresses[pTx.from].hasFunds(new BigNumber(pTx.fee))
             ) return;
             pTx.minedInBlockIndex =
                 transactions.push(pTx);
@@ -318,7 +336,6 @@ class Node {
 
     newMiningJob(minerAddress, difficulty) {
         let blockTransactions = this.filterTransactions();
-        console.log(blockTransactions)
         const candidateBlock = new Block(
             this.blockchain.length,
             [

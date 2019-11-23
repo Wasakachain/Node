@@ -65,6 +65,7 @@ class TransactionController {
             transaction.data
         );
         node.pendingTransactions.push(tx);
+        node.sortPendingTransactions();
         NewTransaction.emit('transaction', tx);
         return response.send({ message: 'transaction done!' });
     }
