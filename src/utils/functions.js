@@ -138,17 +138,20 @@ exports.paginateTransactions = (transactions, paginationObj) => {
     let length = transactions.length;
     let lastPage = Math.round(transactions.length / paginate);
     let transactionsToSend = {};
+    let error = false;
     if (transactions.length > 0) {
-        transactions = transactions.length > paginate ? transactions.splice(-(current_page * paginate), paginate) : transactions;
-        for (let index = transactions.length - 1; index >= 0; index--) {
-            let { transactionDataHash } = transactions[index];
-            transactionsToSend[transactionDataHash] = transactions[index];
-        }
+        if (transactions.length >= paginate * current_page) {
+            transactions = transactions.length > paginate ? transactions.splice(-(current_page * paginate), paginate) : transactions;
+            for (let index = transactions.length - 1; index >= 0; index--) {
+                let { transactionDataHash } = transactions[index];
+                transactionsToSend[transactionDataHash] = transactions[index];
+            }
+        } else error = true;
     }
     return {
         transactions: transactionsToSend,
         currentPage: current_page,
-        nextPage: current_page < lastPage ? parseInt(current_page) + 1 : null,
+        nextPage: current_page < lastPage && !error ? parseInt(current_page) + 1 : null,
         lastPage: lastPage !== 0 ? lastPage : 1,
         transactionsPerPage: paginate,
         totalTransactions: length
