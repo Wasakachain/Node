@@ -1,4 +1,4 @@
-const { sha256, verifySignature } = require('../utils/hash');
+const { sha256, verifySignature, getAddressFromCompressedPubKey } = require('../utils/hash');
 const { isValidAddress } = require('../utils/functions');
 const Address = require('./Address');
 const BigNumber = require('bignumber.js');
@@ -90,6 +90,9 @@ class Transaction {
         }
         if (!isValidAddress(pendingTx.from)) {
             return 'Invalid "from" address.';
+        }
+        if(getAddressFromCompressedPubKey(pendingTx.senderPubKey.replace('0x', '')) !== pendingTx.from.replace('0x', '')) {
+            return 'You aren\'t the owner of this address.';
         }
         if (Transaction.dataHash(pendingTx).replace('0x', '') !== pendingTx.transactionDataHash.replace('0x', '')) {
             return 'Invalid transaction hash.';

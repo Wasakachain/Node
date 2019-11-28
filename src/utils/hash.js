@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const elliptic = require('elliptic');
+const ripemd160 = require('ripemd160');
 const ec = new elliptic.ec('secp256k1');
 
 exports.sha256 = function (data) {
@@ -15,4 +16,6 @@ exports.verifySignature = function (data, publicKey, signature) {
     const keyPair = ec.keyFromPublic(formatCompressedPubKey(publicKey), 'hex');
     return keyPair.verify(data, { r: signature[0], s: signature[1] })
 }
-
+exports.getAddressFromCompressedPubKey = function(publicKeyCompressed){
+    return new ripemd160().update(publicKeyCompressed).digest('hex');
+}
