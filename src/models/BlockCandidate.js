@@ -30,7 +30,7 @@ class BlockCandidate {
      * @returns {string}
      */
     hash() {
-        return sha256(JSON.stringify({ blockDataHash: this.blockDataHash, dateCreated: this.dateCreated, nonce: this.nonce }));
+        return sha256(JSON.stringify({ blockDataHash: this.blockDataHash, dateCreated: this.dateCreated, nonce: this.nonce.toString(10) }));
     }
 
     /**
@@ -45,7 +45,7 @@ class BlockCandidate {
             return resolve({
                 blockDataHash: this.blockDataHash,
                 dateCreated: this.dateCreated,
-                nonce: this.nonce,
+                nonce: this.nonce.toString(10),
                 blockHash: this.hash(),
             });
         })
