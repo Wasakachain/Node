@@ -170,6 +170,7 @@ class Node {
         try {
             let res = await request(`${peer}/blocks`);
             if (!this.validateNewChain(res.data)) return;
+            this.miningJobs = {};
             NewBlock.emit('new_block');
             console.log('\x1b[43m%s\x1b[0m', `syncronized with ${peer}`)
         } catch (error) {
